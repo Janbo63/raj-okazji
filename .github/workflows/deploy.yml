@@ -1,0 +1,50 @@
+
+name: Deploy Raj Okazji to Hostinger VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Frontend
+        run: npm run build
+        env:
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          # Replace /var/www/rajokazji with your actual path on the VPS
+          target: "/var/www/rajokazji"
+          source: "dist/*,backend/*,package.json"
+
+      - name: Restart Backend with PM2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/rajokazji
+            npm install --production
+            pm2 restart raj-okazji-backend || pm2 start backend/server.js --name raj-okazji-backend

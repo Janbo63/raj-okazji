@@ -1,0 +1,7 @@
+{
+  "name": "Raj Okazji Online Store",
+  "description": "A high-performance, bilingual e-commerce storefront for UK liquidation stock, featuring Zoho Inventory integration, InPost parcel locker selection, and an AI-powered shopping assistant.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
