@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3300; 
+const PORT = process.env.PORT || 3300; 
 
 app.use(cors());
 app.use(express.json());
@@ -122,18 +122,21 @@ const distPath = path.resolve(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   
-  // In Express 5 / path-to-regexp v8+, '*' is no longer allowed.
-  // Use a named parameter with a zero-or-more quantifier: ':path*'
-  // This is the correct way to handle SPA routing in Express 5.
+  // In Express 5 / path-to-regexp v8+, unnamed wildcards like '*' or '/*' are forbidden.
+  // You MUST use a named parameter. ':path*' captures everything including slashes.
   app.get('/:path*', (req, res) => {
-    // If the request starts with /api/ but reached here, it's an invalid API call
+    // Prevent catching API routes if they weren't matched above
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API route not found' });
     }
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
-  app.get('/', (req, res) => {
+  // Fallback for development where dist might not exist yet
+  app.get('/:path*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+       return res.status(404).json({ error: 'API route not found' });
+    }
     res.status(200).send(`Raj Okazji Backend is running on port ${PORT}. (Static files not found in /dist)`);
   });
 }
