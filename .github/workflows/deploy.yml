@@ -31,33 +31,29 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.HOSTINGER_IP }} >> ~/.ssh/known_hosts
           
-          # Use a clean target directory for the app
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} "mkdir -p /var/www/rajokazji-webstore"
-          
-          # Sync files
           scp -i ~/.ssh/id_rsa -r dist backend package.json root@${{ secrets.HOSTINGER_IP }}:/var/www/rajokazji-webstore/
           
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} << 'EOF'
             cd /var/www/rajokazji-webstore
             npm install --production
             
-            # Find PM2 path
-            export PM2_PATH=$(which pm2 || echo "/usr/local/bin/pm2")
+            # Kill specifically the webstore process
+            pm2 delete raj-okazji-webstore || true
             
-            # FULL RESET OF THE SPECIFIC PROCESS
-            $PM2_PATH delete raj-okazji-v2 || true
-            $PM2_PATH stop raj-okazji-v2 || true
+            # Release port 3300 specifically
+            fuser -k 3300/tcp || true
+            sleep 2
             
-            # ENSURE PORT 3200 IS NOT HELD BY GHOST PROCESSES
-            fuser -k 3200/tcp || true
-            
-            PORT=3200 \
+            PORT=3300 \
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
             ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
             ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
             API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            $PM2_PATH start backend/server.js --name raj-okazji-v2
+            pm2 start backend/server.js --name raj-okazji-webstore
             
-            $PM2_PATH save
+            pm2 save
+            sleep 2
+            curl -s http://localhost:3300/api/status || echo "FAIL: Port 3300 not responding"
           EOF
