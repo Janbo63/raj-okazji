@@ -28,3 +28,6 @@ yarn-error.log*
 Thumbs.db
 When it asks where to save, just press Enter
 When it asks where to save, just press Enter..pub
+hostinger_deploy_rsa
+.gitignore
+hostinger_deploy_rsa.pub

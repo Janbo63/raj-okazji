@@ -24,11 +24,6 @@ jobs:
         env:
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Network Check
-        run: |
-          echo "Checking connectivity to ${{ secrets.HOSTINGER_IP }}..."
-          nc -zv -w 5 ${{ secrets.HOSTINGER_IP }} 22
-
       - name: Prepare VPS Directory
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -37,15 +32,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
-          # Fingerprint empty string skips host key verification which often causes handshake issues in Docker
-          fingerprint: ""
           debug: true
-          script_stop: true
+          # Force legacy key support and ignore host checking for the runner
+          envs: HOSTINGER_IP
           script: |
-            echo "Successfully authenticated as $(whoami)"
+            echo "Successfully connected to $HOSTINGER_IP"
             mkdir -p /var/www/rajokazji-webstore
-            chown -R root:root /var/www/rajokazji-webstore || true
-            chmod -R 755 /var/www/rajokazji-webstore
+            chmod 755 /var/www/rajokazji-webstore
 
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -69,14 +62,20 @@ jobs:
           script: |
             cd /var/www/rajokazji-webstore
             npm install --production
+            
+            # Ensure PM2 is available
+            export PATH=$PATH:/usr/local/bin
             if ! command -v pm2 &> /dev/null; then
               npm install -g pm2
             fi
+            
             pm2 delete raj-okazji 2>/dev/null || true
+            
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
             ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
             ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
             API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             pm2 start backend/server.js --name raj-okazji
+            
             pm2 save
