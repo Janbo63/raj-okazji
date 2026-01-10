@@ -37,14 +37,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
-          # Use insecure cipher if the server is old, though usually not needed for Hostinger
-          # but we add debug to see exactly what fails
+          # This helps if the server has a custom host key or if the action is picky about the handshake
+          fingerprint: "" 
           debug: true
           script: |
             echo "Successfully authenticated as $USER"
-            sudo mkdir -p /var/www/rajokazji-webstore
-            sudo chown -R ${{ secrets.HOSTINGER_USER }}:${{ secrets.HOSTINGER_USER }} /var/www/rajokazji-webstore
-            sudo chmod -R 755 /var/www/rajokazji-webstore
+            mkdir -p /var/www/rajokazji-webstore
+            chown -R ${{ secrets.HOSTINGER_USER }}:${{ secrets.HOSTINGER_USER }} /var/www/rajokazji-webstore
+            chmod -R 755 /var/www/rajokazji-webstore
 
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -69,7 +69,7 @@ jobs:
             cd /var/www/rajokazji-webstore
             npm install --production
             if ! command -v pm2 &> /dev/null; then
-              sudo npm install -g pm2
+              npm install -g pm2
             fi
             pm2 delete raj-okazji 2>/dev/null || true
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
