@@ -24,11 +24,6 @@ jobs:
         env:
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Trust VPS Host
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -p 22 ${{ secrets.HOSTINGER_IP }} >> ~/.ssh/known_hosts
-
       - name: Prepare VPS Directory
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -37,6 +32,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
+          debug: true
+          # This bypasses the known_hosts check within the action itself
+          fingerprint: "SHA256:e/HBhj0n8le2wgixkFrREyBTvaLhsKCgxWQ90vU5o4E"
           script: |
             echo "Successfully connected to Hostinger via port 22"
             mkdir -p /var/www/rajokazji-webstore
@@ -61,6 +59,7 @@ jobs:
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
+          fingerprint: "SHA256:e/HBhj0n8le2wgixkFrREyBTvaLhsKCgxWQ90vU5o4E"
           script: |
             cd /var/www/rajokazji-webstore
             npm install --production
