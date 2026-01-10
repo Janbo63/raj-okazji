@@ -85,7 +85,6 @@ app.get('/api/zoho/items', async (req, res) => {
   }
 });
 
-// ... (Other routes remain same, but wrapped in try/catch) ...
 app.get('/api/zoho/items/:id', async (req, res) => {
   try {
     const token = await getZohoAccessToken();
@@ -119,10 +118,16 @@ app.post('/api/zoho/salesorders', async (req, res) => {
 
 // --- STATIC FILES ---
 const distPath = path.resolve(__dirname, '../dist');
+
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'API route not found' });
+  
+  // Express 5 requires named parameters for wildcards in path-to-regexp
+  // Instead of '*', use '(.*)' or '/*'. '/*' is usually safest for catch-all SPA.
+  app.get('/*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
