@@ -122,9 +122,11 @@ const distPath = path.resolve(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   
-  // Express 5 requires named parameters for wildcards in path-to-regexp
-  // Instead of '*', use '(.*)' or '/*'. '/*' is usually safest for catch-all SPA.
-  app.get('/*', (req, res) => {
+  // In Express 5 / path-to-regexp v8+, '*' is no longer allowed.
+  // Use a named parameter with a zero-or-more quantifier: ':path*'
+  // This is the correct way to handle SPA routing in Express 5.
+  app.get('/:path*', (req, res) => {
+    // If the request starts with /api/ but reached here, it's an invalid API call
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API route not found' });
     }
@@ -143,3 +145,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Time: ${new Date().toLocaleString()}`);
   console.log('-------------------------------------------');
 });
+
