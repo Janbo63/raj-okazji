@@ -1,5 +1,5 @@
 
-name: Deploy Raj Okazji to Hostinger VPS
+name: Deploy Raj Okazji
 
 on:
   push:
@@ -8,43 +8,57 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Frontend
-        run: npm run build
+      - name: Install & Build
+        run: |
+          npm install
+          npm run build
         env:
           API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      - name: Deploy to VPS via SSH
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.HOSTINGER_IP }}
-          username: ${{ secrets.HOSTINGER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          # Replace /var/www/rajokazji with your actual path on the VPS
-          target: "/var/www/rajokazji"
-          source: "dist/*,backend/*,package.json"
-
-      - name: Restart Backend with PM2
+      - name: Prepare VPS Directory
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/rajokazji
+            mkdir -p /var/www/rajokazji-webstore
+            chown -R root:root /var/www/rajokazji-webstore
+            chmod -R 755 /var/www/rajokazji-webstore
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          target: "/var/www/rajokazji-webstore"
+          source: "dist/*,backend/*,package.json"
+          strip_components: 0
+
+      - name: Restart Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_IP }}
+          username: ${{ secrets.HOSTINGER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/rajokazji-webstore
             npm install --production
-            pm2 restart raj-okazji-backend || pm2 start backend/server.js --name raj-okazji-backend
+            pm2 delete raj-okazji 2>/dev/null || true
+            ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
+            ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
+            ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
+            ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
+            API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            pm2 start backend/server.js --name raj-okazji
+            pm2 save
