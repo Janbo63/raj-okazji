@@ -11,7 +11,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-// Hardcode to 3300 for the store as established in our Caddyfile/Infrastructure plan
+
+/**
+ * PORT CONFIGURATION
+ * We hardcode this to 3300 to match the Caddy reverse_proxy configuration
+ * established for rajokazji.com.
+ */
 const PORT = 3300; 
 
 app.use(cors());
@@ -30,7 +35,8 @@ async function getZohoAccessToken() {
   const { ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET } = process.env;
 
   if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) {
-    throw new Error('Missing Zoho Auth Environment Variables (REFRESH_TOKEN, CLIENT_ID, or CLIENT_SECRET)');
+    console.error('CRITICAL: Missing Zoho environment variables.');
+    throw new Error('Missing Zoho Auth Environment Variables');
   }
 
   const params = new URLSearchParams();
@@ -46,7 +52,7 @@ async function getZohoAccessToken() {
 
   const data = await response.json();
   if (!data.access_token) {
-    throw new Error('Failed to refresh Zoho token: ' + JSON.stringify(data));
+    throw new Error('Failed to refresh Zoho token');
   }
 
   cachedAccessToken = data.access_token;
@@ -61,7 +67,6 @@ app.get('/api/status', (req, res) => {
     status: 'online', 
     service: 'Raj Okazji Webstore',
     port: PORT,
-    zoho_configured: !!process.env.ZOHO_ORG_ID,
     timestamp: new Date().toISOString()
   });
 });
@@ -75,7 +80,6 @@ app.get('/api/zoho/items', async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error('[ZOHO ITEMS ERROR]', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -121,17 +125,15 @@ if (fs.existsSync(distPath)) {
   });
 } else {
   app.get('/', (req, res) => {
-    res.send(`<h1>Raj Okazji Backend Online on Port ${PORT}</h1><p>Frontend (dist) folder not found. Please run "npm run build".</p>`);
+    res.status(200).send(`Backend Online on Port ${PORT}. Ready for frontend build.`);
   });
 }
 
+// Start listening on all interfaces
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`
-  🚀 RAJ OKAZJI STOREFRONT
-  --------------------------------
-  Port:    ${PORT}
-  Address: http://localhost:${PORT}
-  Status:  Internal Proxy Ready
-  --------------------------------
-  `);
-})
+  console.log('-------------------------------------------');
+  console.log(`🚀 RAJ OKAZJI STOREFRONT ACTIVE`);
+  console.log(`Port: ${PORT}`);
+  console.log(`Time: ${new Date().toLocaleString()}`);
+  console.log('-------------------------------------------');
+});
