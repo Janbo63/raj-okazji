@@ -30,22 +30,19 @@ jobs:
           nc -zv -w 5 ${{ secrets.HOSTINGER_IP }} 22
 
       - name: Prepare VPS Directory
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           timeout: 60s
-          # fingerprint: "" is used to skip host key verification
+          # Fingerprint empty string skips host key verification which often causes handshake issues in Docker
           fingerprint: ""
-          # Forces the use of publickey authentication only to avoid "none" method failures
-          use_insecure_cipher: true 
           debug: true
           script: |
-            echo "Successfully authenticated as $USER"
+            echo "Successfully authenticated as $(whoami)"
             mkdir -p /var/www/rajokazji-webstore
-            # Note: We use || true to prevent failure if user mapping is tricky in the container
             chown -R root:root /var/www/rajokazji-webstore || true
             chmod -R 755 /var/www/rajokazji-webstore
 
@@ -62,7 +59,7 @@ jobs:
           strip_components: 0
 
       - name: Restart Server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOSTINGER_IP }}
           username: ${{ secrets.HOSTINGER_USER }}
@@ -71,11 +68,9 @@ jobs:
           script: |
             cd /var/www/rajokazji-webstore
             npm install --production
-            # Install PM2 globally if missing
             if ! command -v pm2 &> /dev/null; then
               npm install -g pm2
             fi
-            # Restart or Start the application
             pm2 delete raj-okazji 2>/dev/null || true
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
             ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
