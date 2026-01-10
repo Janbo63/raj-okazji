@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
@@ -17,7 +18,12 @@ const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID;
 const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET;
 const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN;
 const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID || '866851240';
-const PORT = process.env.PORT || 3200; // Updated to 3200 for Caddy alignment
+const PORT = process.env.PORT || 3200;
+
+// Resolve the dist path reliably
+// On VPS, structure is /var/www/rajokazji-webstore/[backend, dist, package.json]
+const distPath = path.resolve(__dirname, '../dist');
+const indexPath = path.join(distPath, 'index.html');
 
 let cachedToken = '';
 
@@ -35,7 +41,6 @@ async function getAccessToken() {
   
   if (data.access_token) {
     cachedToken = data.access_token;
-    // Cache for 55 minutes
     setTimeout(() => { cachedToken = ''; }, 55 * 60 * 1000);
     return cachedToken;
   }
@@ -47,21 +52,21 @@ app.get('/api/status', (req, res) => {
     app: 'Raj Okazji Online Store',
     status: 'active', 
     port: PORT,
+    distPathExists: fs.existsSync(distPath),
+    indexExists: fs.existsSync(indexPath),
     hasRefreshToken: !!ZOHO_REFRESH_TOKEN,
-    hasGeminiKey: !!process.env.API_KEY,
     orgId: ZOHO_ORG_ID
   });
 });
 
 app.get('/api/activate-zoho', async (req, res) => {
   const { code } = req.query;
-  if (!code) return res.status(400).send('No code provided. Append ?code=YOUR_CODE to the URL.');
+  if (!code) return res.status(400).send('No code provided.');
   
   const url = `https://accounts.zoho.com/oauth/v2/token?code=${code}&client_id=${ZOHO_CLIENT_ID}&client_secret=${ZOHO_CLIENT_SECRET}&grant_type=authorization_code`;
   try {
     const response = await fetch(url, { method: 'POST' });
     const data = await response.json();
-    console.log('Zoho Activation Attempt:', data);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -79,25 +84,31 @@ app.get('/api/zoho/items', async (req, res) => {
     if (!response.ok) return res.status(response.status).json(data);
     res.json(data);
   } catch (error) {
-    console.error('Items Fetch Error:', error.message);
     res.status(error.message.includes('MISSING_REFRESH_TOKEN') ? 403 : 500).json({ error: error.message });
   }
 });
 
-// Serve static files from the 'dist' directory
-const distPath = path.join(__dirname, '../dist');
-app.use(express.static(distPath));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+// SERVE STATIC FILES
+if (fs.existsSync(distPath)) {
+  console.log(`✅ Serving static files from: ${distPath}`);
+  app.use(express.static(distPath));
+  
+  // SPA routing: send index.html for any non-API request
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API endpoint not found' });
+    res.sendFile(indexPath);
+  });
+} else {
+  console.error(`❌ CRITICAL: Dist directory not found at ${distPath}`);
+  app.get('/', (req, res) => {
+    res.status(500).send(`Backend is running, but frontend 'dist' folder is missing at ${distPath}. Please check your build/deployment.`);
+  });
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log('--------------------------------------------------');
   console.log(`🚀 Raj Okazji Store running on port ${PORT}`);
-  console.log(`🔗 Access locally at: http://localhost:${PORT}`);
-  console.log(`🔑 Zoho Config: ${ZOHO_CLIENT_ID ? 'SET' : 'MISSING'}`);
-  console.log(`🔄 Refresh Token: ${ZOHO_REFRESH_TOKEN ? 'SET' : 'NOT YET ACTIVATED'}`);
-  console.log(`🤖 Gemini AI Key: ${process.env.API_KEY ? 'SET' : 'MISSING'}`);
+  console.log(`📂 Dist Path: ${distPath}`);
+  console.log(`📄 Index Found: ${fs.existsSync(indexPath)}`);
   console.log('--------------------------------------------------');
 });
