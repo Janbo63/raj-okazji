@@ -26,33 +26,30 @@ jobs:
 
       - name: Deploy via Native SSH
         run: |
-          # Setup SSH Key
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          
-          # Add VPS to known hosts using the fingerprint you verified
           ssh-keyscan -H ${{ secrets.HOSTINGER_IP }} >> ~/.ssh/known_hosts
           
-          # Prepare directory
+          # Use a clean target directory for the app
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} "mkdir -p /var/www/rajokazji-webstore"
           
-          # Upload files using SCP (Native)
+          # Sync files
           scp -i ~/.ssh/id_rsa -r dist backend package.json root@${{ secrets.HOSTINGER_IP }}:/var/www/rajokazji-webstore/
           
-          # Finalize on server
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} << 'EOF'
             cd /var/www/rajokazji-webstore
             npm install --production
             
-            # Setup PM2 path
-            export PATH=$PATH:/usr/local/bin
-            if ! command -v pm2 &> /dev/null; then
-              npm install -g pm2
-            fi
+            # Find PM2 path
+            export PM2_PATH=$(which pm2 || echo "/usr/local/bin/pm2")
             
-            # Restart the app on port 3200
-            pm2 delete raj-okazji 2>/dev/null || true
+            # FULL RESET OF THE SPECIFIC PROCESS
+            $PM2_PATH delete raj-okazji-v2 || true
+            $PM2_PATH stop raj-okazji-v2 || true
+            
+            # ENSURE PORT 3200 IS NOT HELD BY GHOST PROCESSES
+            fuser -k 3200/tcp || true
             
             PORT=3200 \
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
@@ -60,7 +57,7 @@ jobs:
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
             ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
             API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            pm2 start backend/server.js --name raj-okazji
+            $PM2_PATH start backend/server.js --name raj-okazji-v2
             
-            pm2 save
+            $PM2_PATH save
           EOF
