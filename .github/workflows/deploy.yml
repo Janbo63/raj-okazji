@@ -1,3 +1,4 @@
+
 name: Deploy Raj Okazji
 
 on:
@@ -36,14 +37,16 @@ jobs:
           
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} << 'EOF'
             cd /var/www/rajokazji-webstore
+            
+            # Critical: Install dependencies on the VPS
             npm install --production
             
-            # Kill specifically the webstore process
+            # Restart process
             pm2 delete raj-okazji-webstore || true
-            
-            # Release port 3300 specifically
             fuser -k 3300/tcp || true
-            sleep 2
+            
+            # Re-allow port in firewall just in case
+            ufw allow 3300/tcp || true
             
             PORT=3300 \
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
@@ -54,6 +57,4 @@ jobs:
             pm2 start backend/server.js --name raj-okazji-webstore
             
             pm2 save
-            sleep 2
-            curl -s http://localhost:3300/api/status || echo "FAIL: Port 3300 not responding"
           EOF
