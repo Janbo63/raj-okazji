@@ -122,21 +122,18 @@ const distPath = path.resolve(__dirname, '../dist');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   
-  // In Express 5 / path-to-regexp v8+, unnamed wildcards like '*' or '/*' are forbidden.
-  // You MUST use a named parameter. ':path*' captures everything including slashes.
-  app.get('/:path*', (req, res) => {
-    // Prevent catching API routes if they weren't matched above
-    if (req.path.startsWith('/api/')) {
-      return res.status(404).json({ error: 'API route not found' });
-    }
+  /**
+   * EXPRESS 5 FIX:
+   * Instead of using strings like '*' or '/:path*', we use a Regex literal.
+   * This avoids the path-to-regexp string parser entirely.
+   * The regex below matches all routes EXCEPT those starting with /api
+   */
+  app.get(/^(?!\/api).*$/, (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
   // Fallback for development where dist might not exist yet
-  app.get('/:path*', (req, res) => {
-    if (req.path.startsWith('/api/')) {
-       return res.status(404).json({ error: 'API route not found' });
-    }
+  app.get(/^(?!\/api).*$/, (req, res) => {
     res.status(200).send(`Raj Okazji Backend is running on port ${PORT}. (Static files not found in /dist)`);
   });
 }
