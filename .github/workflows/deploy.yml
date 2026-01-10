@@ -40,6 +40,7 @@ jobs:
           # Fingerprint empty string skips host key verification which often causes handshake issues in Docker
           fingerprint: ""
           debug: true
+          script_stop: true
           script: |
             echo "Successfully authenticated as $(whoami)"
             mkdir -p /var/www/rajokazji-webstore
