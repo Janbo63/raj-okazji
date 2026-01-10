@@ -7,16 +7,16 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
+// Global error handling to prevent silent PM2 crashes
+process.on('uncaughtException', (err) => {
+  console.error('UNCAUGHT EXCEPTION:', err.message);
+  console.error(err.stack);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-/**
- * PORT CONFIGURATION
- * We hardcode this to 3300 to match the Caddy reverse_proxy configuration
- * established for rajokazji.com.
- */
 const PORT = 3300; 
 
 app.use(cors());
@@ -35,8 +35,7 @@ async function getZohoAccessToken() {
   const { ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET } = process.env;
 
   if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) {
-    console.error('CRITICAL: Missing Zoho environment variables.');
-    throw new Error('Missing Zoho Auth Environment Variables');
+    throw new Error('ZOHO_AUTH_MISSING');
   }
 
   const params = new URLSearchParams();
@@ -52,7 +51,7 @@ async function getZohoAccessToken() {
 
   const data = await response.json();
   if (!data.access_token) {
-    throw new Error('Failed to refresh Zoho token');
+    throw new Error('ZOHO_TOKEN_REFRESH_FAILED');
   }
 
   cachedAccessToken = data.access_token;
@@ -67,6 +66,7 @@ app.get('/api/status', (req, res) => {
     status: 'online', 
     service: 'Raj Okazji Webstore',
     port: PORT,
+    zoho_ready: !!(process.env.ZOHO_ORG_ID && process.env.ZOHO_REFRESH_TOKEN),
     timestamp: new Date().toISOString()
   });
 });
@@ -80,10 +80,12 @@ app.get('/api/zoho/items', async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('API Error:', error.message);
+    res.status(500).json({ error: error.message === 'ZOHO_AUTH_MISSING' ? 'Backend not configured with Zoho keys' : error.message });
   }
 });
 
+// ... (Other routes remain same, but wrapped in try/catch) ...
 app.get('/api/zoho/items/:id', async (req, res) => {
   try {
     const token = await getZohoAccessToken();
@@ -125,11 +127,10 @@ if (fs.existsSync(distPath)) {
   });
 } else {
   app.get('/', (req, res) => {
-    res.status(200).send(`Backend Online on Port ${PORT}. Ready for frontend build.`);
+    res.status(200).send(`Raj Okazji Backend is running on port ${PORT}. (Static files not found in /dist)`);
   });
 }
 
-// Start listening on all interfaces
 app.listen(PORT, '0.0.0.0', () => {
   console.log('-------------------------------------------');
   console.log(`🚀 RAJ OKAZJI STOREFRONT ACTIVE`);
