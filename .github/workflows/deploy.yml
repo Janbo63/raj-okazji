@@ -38,7 +38,6 @@ jobs:
           ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} "mkdir -p /var/www/rajokazji-webstore"
           
           # Upload files using SCP (Native)
-          # We upload dist, backend, and package.json
           scp -i ~/.ssh/id_rsa -r dist backend package.json root@${{ secrets.HOSTINGER_IP }}:/var/www/rajokazji-webstore/
           
           # Finalize on server
@@ -52,9 +51,10 @@ jobs:
               npm install -g pm2
             fi
             
-            # Restart the app
+            # Restart the app on port 3200
             pm2 delete raj-okazji 2>/dev/null || true
             
+            PORT=3200 \
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
             ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
