@@ -1,52 +1,35 @@
-# 🏰 Raj Okazji - Development Control Center
+# 🏰 Raj Okazji - Online Store
 
-This project is a high-performance, bilingual e-commerce storefront. 
+This repository is synced directly from the development environment.
 
-## 🛠 Local Setup (The Sync Bridge)
+## 🚀 How to Sync
+1. Use the **"Save to GitHub"** button in the AI Studio interface.
+2. Ensure you have authorized the application to access your GitHub repositories.
+3. Select your target repository and branch (`main`).
 
-If you have downloaded these files from AI Studio, follow these steps to get running and sync to GitHub:
+## 🛠 VPS Deployment
+This project is configured for automated deployment to a Hostinger VPS via GitHub Actions.
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+### Required GitHub Secrets:
+- `HOSTINGER_IP`: Your VPS IP.
+- `SSH_PRIVATE_KEY`: Your SSH Private Key for VPS access.
+- `ZOHO_CLIENT_ID`: From Zoho API Console.
+- `ZOHO_CLIENT_SECRET`: From Zoho API Console.
+- `GEMINI_API_KEY`: Your Google AI API Key.
+- `ZOHO_ORG_ID`: Your Zoho Organization ID.
+- `ZOHO_REFRESH_TOKEN`: Your persistent Zoho Refresh Token.
 
-2. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
-   *The site will be available at http://localhost:5173*
+## 🌐 Exposing to the Web (Caddy)
+Since you are using Caddy, ensure your Caddyfile points to port 3200:
 
-3. **Setup Environment Variables**
-   Create a `.env` file in the root directory:
-   ```env
-   VITE_GEMINI_API_KEY=your_key_here
-   ZOHO_CLIENT_ID=your_id
-   ZOHO_CLIENT_SECRET=your_secret
-   ZOHO_REFRESH_TOKEN=your_token
-   ```
+```caddy
+rajokazji.com {
+    reverse_proxy localhost:3200
+}
+```
 
-## ⬆️ Syncing Local to GitHub
-
-1. Create a new **empty** repository on GitHub.
-2. Open your terminal in this project folder:
-   ```bash
-   git init
-   git add .
-   git commit -m "Sync from AI Studio"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-   git push -u origin main
-   ```
-
-## 🚀 Deployment (Hostinger VPS)
-
-The `.github/workflows/deploy.yml` is already configured. Once you push to GitHub:
-1. Go to **Settings > Secrets** in your GitHub Repo.
-2. Add `HOSTINGER_IP`, `HOSTINGER_USER`, `SSH_PRIVATE_KEY`, and `GEMINI_API_KEY`.
-3. GitHub will automatically build the React app and deploy it to your VPS.
-
-## 📁 Structure
-- `/src`: Frontend React + Tailwind (Vite)
-- `/backend`: Node.js Express proxy (Handles Zoho OAuth/CORS)
-- `/services`: Integration logic for Gemini AI and Zoho Inventory
+### 🔑 Zoho Activation:
+If you need to generate a new refresh token:
+1. Visit `http://YOUR_VPS_IP:3200/api/activate-zoho?code=YOUR_ZOHO_GRANT_CODE`.
+2. Copy the returned `refresh_token` and add it to your GitHub Secrets as `ZOHO_REFRESH_TOKEN`.
+3. Re-deploy.
