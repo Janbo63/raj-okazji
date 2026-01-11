@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, createContext, useContext } from 'react';
-import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Language, CartItem, ZohoItem, User } from './types';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -8,6 +8,27 @@ import Catalog from './pages/Catalog';
 import ProductDetail from './pages/ProductDetail';
 import Checkout from './pages/Checkout';
 import { fetchItems } from './services/zohoService';
+
+// Define global interface for Lucide icon library loaded via CDN/Script
+declare global {
+  interface Window {
+    lucide?: {
+      createIcons: () => void;
+    };
+  }
+}
+
+// Component to refresh icons on navigation
+const IconRefresh: React.FC = () => {
+  const location = useLocation();
+  useEffect(() => {
+    // Check if lucide is available on the window object
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }, [location]);
+  return null;
+};
 
 interface AppContextType {
   lang: Language;
@@ -96,6 +117,7 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={value}>
       <Router>
+        <IconRefresh />
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
@@ -148,7 +170,7 @@ const App: React.FC = () => {
               </div>
               <div className="pt-8 border-t border-gray-100 text-center">
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">
-                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value
+                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value (v1.1)
                 </p>
               </div>
             </div>
