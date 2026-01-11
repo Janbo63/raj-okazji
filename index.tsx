@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-console.log("Raj Okazji: Initializing Application v1.1");
+console.log("Raj Okazji: Initializing Application v3.2");
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -20,8 +20,10 @@ try {
   console.log("Raj Okazji: Render successful");
 } catch (error) {
   console.error("Raj Okazji: Critical Render Error", error);
-  rootElement.innerHTML = `<div style="padding: 20px; text-align: center; font-family: sans-serif;">
+  // The global onerror in index.html will catch this if it bubbles up,
+  // but let's ensure we write to the DOM here too just in case.
+  rootElement.innerHTML = `<div style="padding: 20px; text-align: center; font-family: sans-serif; color: red;">
     <h2>Application Error</h2>
-    <p>Please check the console for details.</p>
+    <pre>${error instanceof Error ? error.message : JSON.stringify(error)}</pre>
   </div>`;
 }

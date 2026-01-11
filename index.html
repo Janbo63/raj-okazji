@@ -9,8 +9,25 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <title>Raj Okazji STORE v3.1</title>
+    <title>Raj Okazji STORE v3.2</title>
     
+    <!-- Global Error Handler for Debugging Blank Screens -->
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        var div = document.createElement("div");
+        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkred;";
+        div.innerText = "CRITICAL ERROR v3.2:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
+        document.body.appendChild(div);
+        return false;
+      };
+      window.onunhandledrejection = function(event) {
+        var div = document.createElement("div");
+        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:orange; color:black; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkorange;";
+        div.innerText = "UNHANDLED PROMISE REJECTION v3.2:\n" + event.reason;
+        document.body.appendChild(div);
+      };
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -76,7 +93,7 @@
         if (window.lucide) {
           window.lucide.createIcons();
         }
-        console.log("Raj Okazji: Index HTML v3.1 Loaded");
+        console.log("Raj Okazji: Index HTML v3.2 Loaded");
       });
     </script>
   </body>

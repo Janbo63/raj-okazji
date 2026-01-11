@@ -52,7 +52,7 @@ export const useAppContext = () => {
 };
 
 const App: React.FC = () => {
-  console.log("Raj Okazji App v3.1 Initialized");
+  console.log("Raj Okazji App v3.2 Initialized");
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('raj_okazji_lang');
     return (saved as Language) || Language.PL;
@@ -170,7 +170,7 @@ const App: React.FC = () => {
               </div>
               <div className="pt-8 border-t border-gray-100 text-center">
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">
-                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value (v3.1)
+                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value (v3.2)
                 </p>
               </div>
             </div>
