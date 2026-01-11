@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, createContext, useContext } from 'react';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Language, CartItem, ZohoItem, User } from './types';
@@ -53,6 +52,7 @@ export const useAppContext = () => {
 };
 
 const App: React.FC = () => {
+  console.log("Raj Okazji App v1.3 Initialized");
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('raj_okazji_lang');
     return (saved as Language) || Language.PL;
@@ -170,7 +170,7 @@ const App: React.FC = () => {
               </div>
               <div className="pt-8 border-t border-gray-100 text-center">
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-widest">
-                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value (v1.1)
+                  &copy; {new Date().getFullYear()} Raj Okazji Sp. z o.o. • Designed for Value (v1.3)
                 </p>
               </div>
             </div>

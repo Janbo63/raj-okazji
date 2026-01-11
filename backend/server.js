@@ -109,11 +109,23 @@ app.use('/api', apiRouter);
 // --- STATIC FILES & SPA FALLBACK ---
 const distPath = path.resolve(__dirname, '../dist');
 
-// Serve static assets normally
-app.use(express.static(distPath));
+// Helper to disable caching for index.html
+const setNoCache = (res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+};
+
+// Serve static assets normally, but force no-cache on index.html if requested directly
+app.use(express.static(distPath, {
+  setHeaders: (res, path) => {
+    if (path.endsWith('index.html')) {
+      setNoCache(res);
+    }
+  }
+}));
 
 // Express 5 SPA Fallback
-// We use a RegExp /.*/ because the string '*' is no longer supported in Express 5's router
 app.get(/.*/, (req, res) => {
   // If it's an API call that leaked through, 404 it
   if (req.path.startsWith('/api')) {
@@ -122,6 +134,8 @@ app.get(/.*/, (req, res) => {
   
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
+    // Force no-cache on the fallback index.html as well
+    setNoCache(res);
     res.sendFile(indexPath);
   } else {
     res.status(404).send(`
