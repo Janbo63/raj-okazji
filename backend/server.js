@@ -112,17 +112,22 @@ const distPath = path.resolve(__dirname, '../dist');
 // Serve static assets normally
 app.use(express.static(distPath));
 
-// Express 5 compatible catch-all for SPA
-// Using the "index" property of static as a fallback or this specific regex:
-app.get('*', (req, res, next) => {
+// Express 5 SPA Fallback
+// We use a RegExp /.*/ because the string '*' is no longer supported in Express 5's router
+app.get(/.*/, (req, res) => {
   // If it's an API call that leaked through, 404 it
-  if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
   
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('Build folder (dist) not found. Run npm run build.');
+    res.status(404).send(`
+      <h1>Frontend Not Found</h1>
+      <p>The 'dist' directory is missing. Please run <code>npm run build</code> on the server.</p>
+    `);
   }
 });
 
