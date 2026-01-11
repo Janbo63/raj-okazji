@@ -1,9 +1,8 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-console.log("Raj Okazji: Initializing Application...");
+console.log("Raj Okazji: Initializing Application v1.1");
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
