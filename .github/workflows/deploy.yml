@@ -1,4 +1,3 @@
-
 name: Deploy Raj Okazji
 
 on:
@@ -32,17 +31,16 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 46.202.129.30 >> ~/.ssh/known_hosts
           
-          # Sync all relevant files to the server (Source + Build)
-          # Removed 'public' as it does not exist in the project root
-          ssh -i ~/.ssh/id_rsa root@46.202.129.30 "mkdir -p /var/www/rajokazji-webstore"
-          scp -i ~/.ssh/id_rsa -r dist backend components pages services index.html index.tsx App.tsx types.ts constants.ts vite.config.ts package.json root@46.202.129.30:/var/www/rajokazji-webstore/
+          # Upload build and backend
+          scp -i ~/.ssh/id_rsa -r dist backend package.json root@46.202.129.30:/var/www/rajokazji-webstore/
           
+          # Restart server
           ssh -i ~/.ssh/id_rsa root@46.202.129.30 << 'EOF'
             cd /var/www/rajokazji-webstore
             npm install --production
+            
+            # Use --update-env to ensure changes to secrets/ports are applied
             pm2 delete raj-okazji-webstore || true
-            fuser -k 3300/tcp || true
-            ufw allow 3300/tcp || true
             
             PORT=3300 \
             ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
@@ -50,7 +48,7 @@ jobs:
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
             ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
             API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            pm2 start backend/server.js --name raj-okazji-webstore
+            pm2 start backend/server.js --name raj-okazji-webstore --update-env
             
             pm2 save
           EOF
