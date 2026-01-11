@@ -33,9 +33,9 @@ jobs:
           ssh-keyscan -H 46.202.129.30 >> ~/.ssh/known_hosts
           
           # Sync all relevant files to the server (Source + Build)
-          # We include components, pages, services, etc.
+          # Removed 'public' as it does not exist in the project root
           ssh -i ~/.ssh/id_rsa root@46.202.129.30 "mkdir -p /var/www/rajokazji-webstore"
-          scp -i ~/.ssh/id_rsa -r dist backend components pages services public index.html index.tsx App.tsx types.ts constants.ts vite.config.ts package.json root@46.202.129.30:/var/www/rajokazji-webstore/
+          scp -i ~/.ssh/id_rsa -r dist backend components pages services index.html index.tsx App.tsx types.ts constants.ts vite.config.ts package.json root@46.202.129.30:/var/www/rajokazji-webstore/
           
           ssh -i ~/.ssh/id_rsa root@46.202.129.30 << 'EOF'
             cd /var/www/rajokazji-webstore
