@@ -9,22 +9,22 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <title>Raj Okazji STORE v3.3</title>
+    <title>Raj Okazji STORE v3.4</title>
     
     <!-- Global Error Handler for Debugging Blank Screens -->
     <script>
-      console.log("Raj Okazji HTML v3.3 loading...");
+      console.log("Raj Okazji HTML v3.4 loading...");
       window.onerror = function(msg, url, line, col, error) {
         var div = document.createElement("div");
         div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkred; box-sizing: border-box;";
-        div.innerText = "CRITICAL ERROR v3.3:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
+        div.innerText = "CRITICAL ERROR v3.4:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
         document.body.appendChild(div);
         return false;
       };
       window.onunhandledrejection = function(event) {
         var div = document.createElement("div");
         div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:orange; color:black; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkorange; box-sizing: border-box;";
-        div.innerText = "UNHANDLED PROMISE REJECTION v3.3:\n" + event.reason;
+        div.innerText = "UNHANDLED PROMISE REJECTION v3.4:\n" + event.reason;
         document.body.appendChild(div);
       };
     </script>
@@ -65,7 +65,7 @@
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-  <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -94,7 +94,7 @@
         if (window.lucide) {
           window.lucide.createIcons();
         }
-        console.log("Raj Okazji: Index HTML v3.3 Loaded");
+        console.log("Raj Okazji: Index HTML v3.4 Loaded");
       });
     </script>
   </body>
