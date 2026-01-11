@@ -12,6 +12,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3300; 
 
+console.log('-------------------------------------------');
+console.log(`🚀 RAJ OKAZJI BOOT SEQUENCE`);
+console.log(`Port: ${PORT}`);
+console.log(`Node Version: ${process.version}`);
+console.log('-------------------------------------------');
+
 app.use(cors());
 app.use(express.json());
 
@@ -48,7 +54,7 @@ async function getZohoAccessToken() {
 const apiRouter = express.Router();
 
 apiRouter.get('/status', (req, res) => {
-  res.json({ status: 'online', timestamp: new Date().toISOString() });
+  res.json({ status: 'online', port: PORT, uptime: process.uptime() });
 });
 
 apiRouter.get('/zoho/items', async (req, res) => {
@@ -98,36 +104,34 @@ apiRouter.post('/zoho/salesorders', async (req, res) => {
   }
 });
 
-// Explicitly mount API router BEFORE static files
 app.use('/api', apiRouter);
 
-// --- STATIC FILES ---
+// --- STATIC FILES & SPA FALLBACK ---
 const distPath = path.resolve(__dirname, '../dist');
+
+// Serve static assets normally
 app.use(express.static(distPath));
 
-// SPA Fallback - Express 5 requires (.*) for wildcards
-app.get('(.*)', (req, res) => {
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ error: `API endpoint ${req.path} not found.` });
-  }
-
+// Express 5 compatible catch-all for SPA
+// Using the "index" property of static as a fallback or this specific regex:
+app.get('*', (req, res, next) => {
+  // If it's an API call that leaked through, 404 it
+  if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
+  
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(503).send(`
-      <html>
-        <body style="font-family: sans-serif; text-align: center; padding: 50px;">
-          <h1>Site Under Maintenance</h1>
-          <p>The frontend build is currently missing or being updated. Please try again in 1 minute.</p>
-          <p style="color: #666; font-size: 0.8em;">Error: dist/index.html not found</p>
-        </body>
-      </html>
-    `);
+    res.status(404).send('Build folder (dist) not found. Run npm run build.');
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[READY] Listening on http://0.0.0.0:${PORT}`);
+});
+
+server.on('error', (err) => {
+  console.error('[CRITICAL] Server failed to bind to port:', err.message);
+  process.exit(1);
 });
 
