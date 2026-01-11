@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
-console.log("Raj Okazji: Initializing Application v3.3");
+console.log("Raj Okazji: Initializing Application v3.5");
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
