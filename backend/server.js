@@ -79,22 +79,51 @@ apiRouter.get('/zoho/items/:id', async (req, res) => {
   }
 });
 
+apiRouter.post('/zoho/salesorders', async (req, res) => {
+  try {
+    const orgId = process.env.ZOHO_ORG_ID;
+    const token = await getZohoAccessToken();
+    const response = await fetch(`https://inventory.zoho.com/api/v1/salesorders?organization_id=${orgId}`, {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Zoho-oauthtoken ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(req.body)
+    });
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Explicitly mount API router BEFORE static files
 app.use('/api', apiRouter);
 
 // --- STATIC FILES ---
 const distPath = path.resolve(__dirname, '../dist');
 app.use(express.static(distPath));
 
-// SPA Fallback - ONLY for non-API routes
-app.get('*', (req, res) => {
+// SPA Fallback - Express 5 requires (.*) for wildcards
+app.get('(.*)', (req, res) => {
   if (req.path.startsWith('/api')) {
-    return res.status(404).json({ error: 'API Endpoint not found' });
+    return res.status(404).json({ error: `API endpoint ${req.path} not found.` });
   }
+
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).send('Frontend build (dist) not found. Please run npm run build.');
+    res.status(503).send(`
+      <html>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+          <h1>Site Under Maintenance</h1>
+          <p>The frontend build is currently missing or being updated. Please try again in 1 minute.</p>
+          <p style="color: #666; font-size: 0.8em;">Error: dist/index.html not found</p>
+        </body>
+      </html>
+    `);
   }
 });
 
