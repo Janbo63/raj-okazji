@@ -31,10 +31,13 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H 46.202.129.30 >> ~/.ssh/known_hosts
           
-          # Upload build and backend
+          # 1. FORCE CLEANUP: Delete old dist folder to prevent stale files
+          ssh -i ~/.ssh/id_rsa root@46.202.129.30 "rm -rf /var/www/rajokazji-webstore/dist"
+          
+          # 2. Upload build and backend
           scp -i ~/.ssh/id_rsa -r dist backend package.json root@46.202.129.30:/var/www/rajokazji-webstore/
           
-          # Restart server
+          # 3. Restart server
           ssh -i ~/.ssh/id_rsa root@46.202.129.30 << 'EOF'
             cd /var/www/rajokazji-webstore
             npm install --production

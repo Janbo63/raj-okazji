@@ -9,11 +9,21 @@ import 'dotenv/config';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Read package.json to get version
+const packageJsonPath = path.resolve(__dirname, '../package.json');
+let appVersion = 'unknown';
+try {
+  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  appVersion = pkg.version;
+} catch (e) {
+  console.error("Could not read package.json version");
+}
+
 const app = express();
 const PORT = process.env.PORT || 3300; 
 
 console.log('-------------------------------------------');
-console.log(`🚀 RAJ OKAZJI BOOT SEQUENCE`);
+console.log(`🚀 RAJ OKAZJI BOOT SEQUENCE v${appVersion}`);
 console.log(`Port: ${PORT}`);
 console.log(`Node Version: ${process.version}`);
 console.log('-------------------------------------------');
@@ -54,7 +64,11 @@ async function getZohoAccessToken() {
 const apiRouter = express.Router();
 
 apiRouter.get('/status', (req, res) => {
-  res.json({ status: 'online', port: PORT, uptime: process.uptime() });
+  res.json({ status: 'online', port: PORT, version: appVersion, uptime: process.uptime() });
+});
+
+apiRouter.get('/version', (req, res) => {
+  res.json({ version: appVersion, timestamp: new Date().toISOString() });
 });
 
 apiRouter.get('/zoho/items', async (req, res) => {
