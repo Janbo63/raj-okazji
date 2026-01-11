@@ -1,4 +1,3 @@
-
 import { ZohoItem } from '../types';
 
 /**
@@ -7,10 +6,12 @@ import { ZohoItem } from '../types';
  * This service points to our local backend proxy /api/zoho.
  */
 
+// Use an absolute-relative path to ensure it hits the current origin's API
 const API_BASE = '/api/zoho';
-const ORG_ID = '866851240'; // Replace with your actual Org ID if different
 
 const mapZohoItem = (raw: any): ZohoItem => {
+  if (!raw) return {} as ZohoItem;
+  
   const getCustomField = (label: string) => 
     raw.custom_fields?.find((f: any) => f.label === label || f.placeholder === label)?.value || '';
 
@@ -21,36 +22,46 @@ const mapZohoItem = (raw: any): ZohoItem => {
     available_stock: raw.available_stock || 0,
     status: raw.status === 'active' ? 'active' : 'inactive',
     item_images: Array.isArray(raw.item_images) ? raw.item_images : [],
-    cf_item_name_pl: getCustomField('cf_item_name_pl') || raw.name,
-    cf_item_name_en: getCustomField('cf_item_name_en') || raw.name,
-    cf_description_pl: getCustomField('cf_description_pl') || raw.description,
-    cf_description_en: getCustomField('cf_description_en') || raw.description,
+    cf_item_name_pl: getCustomField('cf_item_name_pl') || raw.name || '',
+    cf_item_name_en: getCustomField('cf_item_name_en') || raw.name || '',
+    cf_description_pl: getCustomField('cf_description_pl') || raw.description || '',
+    cf_description_en: getCustomField('cf_description_en') || raw.description || '',
     cf_category_pl: getCustomField('cf_category_pl') || 'Inne',
     cf_category_en: getCustomField('cf_category_en') || 'Other',
-    cf_retail_price: parseFloat(getCustomField('cf_retail_price')) || (raw.rate * 2),
+    cf_retail_price: parseFloat(getCustomField('cf_retail_price')) || (raw.rate ? raw.rate * 2 : 0),
   };
 };
 
 export const fetchItems = async (): Promise<ZohoItem[]> => {
   try {
-    const response = await fetch(`${API_BASE}/items?organization_id=${ORG_ID}`);
-    if (!response.ok) throw new Error('Failed to fetch from Zoho');
+    const response = await fetch(`${API_BASE}/items`);
+    if (!response.ok) {
+      // Log the actual text if JSON parsing fails to see if it's a 404 HTML page
+      const text = await response.text();
+      console.error('Zoho Proxy Error Body:', text.substring(0, 200));
+      throw new Error(`Failed to fetch from Zoho: ${response.status}`);
+    }
     const data = await response.json();
-    return (data.items || []).filter((i: any) => i.status === 'active').map(mapZohoItem);
+    return (data.items || [])
+      .filter((i: any) => i.status === 'active')
+      .map(mapZohoItem);
   } catch (error) {
-    console.error('Zoho API Error:', error);
-    return []; 
+    console.error('Zoho Service List Error:', error);
+    throw error;
   }
 };
 
 export const fetchItemById = async (id: string): Promise<ZohoItem | undefined> => {
   try {
-    const response = await fetch(`${API_BASE}/items/${id}?organization_id=${ORG_ID}`);
-    if (!response.ok) throw new Error('Product not found');
+    const response = await fetch(`${API_BASE}/items/${id}`);
+    if (!response.ok) {
+      throw new Error(`Product not found (Status: ${response.status})`);
+    }
     const data = await response.json();
+    if (!data.item) throw new Error('Item object missing in response');
     return mapZohoItem(data.item);
   } catch (error) {
-    console.error('Zoho Detail Error:', error);
+    console.error('Zoho Service Item Detail Error:', error);
     return undefined;
   }
 };
@@ -68,13 +79,16 @@ export const createSalesOrder = async (orderData: any): Promise<{ order_id: stri
       notes: `Order from Online Store. Delivery: ${orderData.paczkomatId || 'Standard'}. Phone: ${orderData.phone}`,
     };
 
-    const response = await fetch(`${API_BASE}/salesorders?organization_id=${ORG_ID}`, {
+    const response = await fetch(`${API_BASE}/salesorders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(zohoOrder),
     });
 
-    if (!response.ok) throw new Error('Failed to create order');
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Order failed: ${JSON.stringify(errData)}`);
+    }
     const data = await response.json();
     return {
       order_id: data.salesorder.salesorder_id,
