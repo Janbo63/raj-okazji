@@ -30,22 +30,18 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.HOSTINGER_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 46.202.129.30 >> ~/.ssh/known_hosts
           
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} "mkdir -p /var/www/rajokazji-webstore"
-          scp -i ~/.ssh/id_rsa -r dist backend package.json root@${{ secrets.HOSTINGER_IP }}:/var/www/rajokazji-webstore/
+          # Sync all relevant files to the server (Source + Build)
+          # We include components, pages, services, etc.
+          ssh -i ~/.ssh/id_rsa root@46.202.129.30 "mkdir -p /var/www/rajokazji-webstore"
+          scp -i ~/.ssh/id_rsa -r dist backend components pages services public index.html index.tsx App.tsx types.ts constants.ts vite.config.ts package.json root@46.202.129.30:/var/www/rajokazji-webstore/
           
-          ssh -i ~/.ssh/id_rsa root@${{ secrets.HOSTINGER_IP }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa root@46.202.129.30 << 'EOF'
             cd /var/www/rajokazji-webstore
-            
-            # Critical: Install dependencies on the VPS
             npm install --production
-            
-            # Restart process
             pm2 delete raj-okazji-webstore || true
             fuser -k 3300/tcp || true
-            
-            # Re-allow port in firewall just in case
             ufw allow 3300/tcp || true
             
             PORT=3300 \
