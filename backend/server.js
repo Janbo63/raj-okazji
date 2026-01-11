@@ -7,12 +7,6 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
-// Global error handling to prevent silent PM2 crashes
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err.message);
-  console.error(err.stack);
-});
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -28,31 +22,19 @@ let tokenExpiry = 0;
 
 async function getZohoAccessToken() {
   const now = Date.now();
-  if (cachedAccessToken && now < tokenExpiry) {
-    return cachedAccessToken;
-  }
-
+  if (cachedAccessToken && now < tokenExpiry) return cachedAccessToken;
   const { ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET } = process.env;
-
-  if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) {
-    throw new Error('ZOHO_AUTH_MISSING');
-  }
-
+  if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) throw new Error('ZOHO_AUTH_MISSING');
+  
   const params = new URLSearchParams();
   params.append('refresh_token', ZOHO_REFRESH_TOKEN);
   params.append('client_id', ZOHO_CLIENT_ID);
   params.append('client_secret', ZOHO_CLIENT_SECRET);
   params.append('grant_type', 'refresh_token');
 
-  const response = await fetch('https://accounts.zoho.com/oauth/v2/token', {
-    method: 'POST',
-    body: params
-  });
-
+  const response = await fetch('https://accounts.zoho.com/oauth/v2/token', { method: 'POST', body: params });
   const data = await response.json();
-  if (!data.access_token) {
-    throw new Error('ZOHO_TOKEN_REFRESH_FAILED');
-  }
+  if (!data.access_token) throw new Error('ZOHO_TOKEN_REFRESH_FAILED');
 
   cachedAccessToken = data.access_token;
   tokenExpiry = now + (data.expires_in - 60) * 1000;
@@ -60,15 +42,8 @@ async function getZohoAccessToken() {
 }
 
 // --- API ROUTES ---
-
 app.get('/api/status', (req, res) => {
-  res.json({ 
-    status: 'online', 
-    service: 'Raj Okazji Webstore',
-    port: PORT,
-    zoho_ready: !!(process.env.ZOHO_ORG_ID && process.env.ZOHO_REFRESH_TOKEN),
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'online', service: 'Raj Okazji Webstore', timestamp: new Date().toISOString() });
 });
 
 app.get('/api/zoho/items', async (req, res) => {
@@ -79,70 +54,43 @@ app.get('/api/zoho/items', async (req, res) => {
     });
     const data = await response.json();
     res.json(data);
-  } catch (error) {
-    console.error('API Error:', error.message);
-    res.status(500).json({ error: error.message === 'ZOHO_AUTH_MISSING' ? 'Backend not configured with Zoho keys' : error.message });
-  }
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.get('/api/zoho/items/:id', async (req, res) => {
-  try {
-    const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.com/api/v1/items/${req.params.id}?organization_id=${process.env.ZOHO_ORG_ID}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/zoho/salesorders', async (req, res) => {
-  try {
-    const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.com/api/v1/salesorders?organization_id=${process.env.ZOHO_ORG_ID}`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Zoho-oauthtoken ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// --- STATIC FILES ---
+// --- STATIC FILES & SPA ROUTING ---
 const distPath = path.resolve(__dirname, '../dist');
 
-if (fs.existsSync(distPath)) {
-  app.use(express.static(distPath));
-  
-  /**
-   * EXPRESS 5 FIX:
-   * Instead of using strings like '*' or '/:path*', we use a Regex literal.
-   * This avoids the path-to-regexp string parser entirely.
-   * The regex below matches all routes EXCEPT those starting with /api
-   */
-  app.get(/^(?!\/api).*$/, (req, res) => {
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-} else {
-  // Fallback for development where dist might not exist yet
-  app.get(/^(?!\/api).*$/, (req, res) => {
-    res.status(200).send(`Raj Okazji Backend is running on port ${PORT}. (Static files not found in /dist)`);
-  });
-}
+app.use(express.static(distPath));
+
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
+
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // DIAGNOSTIC VIEW
+    const filesInRoot = fs.readdirSync(path.resolve(__dirname, '..')).join(', ');
+    res.status(200).send(`
+      <div style="font-family: sans-serif; padding: 40px; line-height: 1.6;">
+        <h1 style="color: #6d28d9;">Raj Okazji Debugger</h1>
+        <p><b>Status:</b> Backend is RUNNING on port ${PORT}.</p>
+        <p><b>Error:</b> Frontend files not found at <code>${indexPath}</code>.</p>
+        <div style="background: #f4f4f4; padding: 20px; border-radius: 10px; margin: 20px 0;">
+          <p><b>Files in project root:</b><br><code>${filesInRoot}</code></p>
+        </div>
+        <p><b>Required Fix:</b></p>
+        <ol>
+          <li>Run <code>ls -la</code> in <code>/var/www/rajokazji-webstore</code> to see if <b>index.html</b> exists there.</li>
+          <li>If missing, re-upload the files.</li>
+          <li>Then run <code>npm run build</code> again.</li>
+        </ol>
+      </div>
+    `);
+  }
+});
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('-------------------------------------------');
-  console.log(`🚀 RAJ OKAZJI STOREFRONT ACTIVE`);
-  console.log(`Port: ${PORT}`);
-  console.log(`Time: ${new Date().toLocaleString()}`);
-  console.log('-------------------------------------------');
+  console.log(`🚀 Storefront Server running on port ${PORT}`);
 });
 
