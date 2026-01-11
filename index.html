@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pl">
   <head>
@@ -8,7 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
+      window.process = { env: { NODE_ENV: 'production' } };
       tailwind.config = {
         theme: {
           extend: {
@@ -52,6 +55,7 @@
     "cors": "https://esm.sh/cors@^2.8.5",
     "node-fetch": "https://esm.sh/node-fetch@^3.3.2",
     "path": "https://esm.sh/path@^0.12.7",
+    "fs": "https://esm.sh/fs@^0.0.1-security",
     "url": "https://esm.sh/url@^0.11.4",
     "dotenv/": "https://esm.sh/dotenv@^17.2.3/"
   }
@@ -61,5 +65,12 @@
   <body class="bg-gray-50 text-gray-900 font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+          window.lucide.createIcons();
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,32 +1,29 @@
 
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 
-// Recreate __dirname for ESM
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+console.log("Raj Okazji: Initializing Application...");
 
-export default defineConfig({
-  plugins: [react()],
-  root: './', // Ensure it looks in the current directory
-  base: './',
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-    },
-  },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3300',
-        changeOrigin: true,
-      },
-    },
-  },
-});
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  console.error("Raj Okazji: Could not find root element to mount to");
+  throw new Error("Could not find root element to mount to");
+}
+
+try {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+  console.log("Raj Okazji: Render successful");
+} catch (error) {
+  console.error("Raj Okazji: Critical Render Error", error);
+  rootElement.innerHTML = `<div style="padding: 20px; text-align: center; font-family: sans-serif;">
+    <h2>Application Error</h2>
+    <p>Please check the console for details.</p>
+  </div>`;
+}
+
