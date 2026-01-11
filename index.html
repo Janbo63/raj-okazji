@@ -9,21 +9,22 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <title>Raj Okazji STORE v3.2</title>
+    <title>Raj Okazji STORE v3.3</title>
     
     <!-- Global Error Handler for Debugging Blank Screens -->
     <script>
+      console.log("Raj Okazji HTML v3.3 loading...");
       window.onerror = function(msg, url, line, col, error) {
         var div = document.createElement("div");
-        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkred;";
-        div.innerText = "CRITICAL ERROR v3.2:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
+        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkred; box-sizing: border-box;";
+        div.innerText = "CRITICAL ERROR v3.3:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
         document.body.appendChild(div);
         return false;
       };
       window.onunhandledrejection = function(event) {
         var div = document.createElement("div");
-        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:orange; color:black; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkorange;";
-        div.innerText = "UNHANDLED PROMISE REJECTION v3.2:\n" + event.reason;
+        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:orange; color:black; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkorange; box-sizing: border-box;";
+        div.innerText = "UNHANDLED PROMISE REJECTION v3.3:\n" + event.reason;
         document.body.appendChild(div);
       };
     </script>
@@ -93,7 +94,7 @@
         if (window.lucide) {
           window.lucide.createIcons();
         }
-        console.log("Raj Okazji: Index HTML v3.2 Loaded");
+        console.log("Raj Okazji: Index HTML v3.3 Loaded");
       });
     </script>
   </body>
