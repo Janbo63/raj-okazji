@@ -1,17 +1,37 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Language } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Safety check for API_KEY to prevent crashes on initial load
+const getAIClient = () => {
+  try {
+    const apiKey = process.env.API_KEY;
+    // Log for debugging (do not log the actual key in production if possible, just existence)
+    if (!apiKey) {
+      console.warn("Raj Okazji: Gemini API Key is missing in process.env. AI features will be disabled.");
+      return null;
+    }
+    return new GoogleGenAI({ apiKey });
+  } catch (error) {
+    console.error("Raj Okazji: Failed to initialize GoogleGenAI client:", error);
+    return null;
+  }
+};
 
 export const getShoppingAdvice = async (query: string, lang: Language): Promise<string> => {
+  const ai = getAIClient();
+  if (!ai) {
+    return lang === Language.PL 
+      ? "Asystent AI jest chwilowo niedostępny (Brak konfiguracji)." 
+      : "AI Assistant is currently unavailable (Missing configuration).";
+  }
+
   const systemInstruction = lang === Language.PL 
     ? "Jesteś asystentem zakupowym w sklepie 'Raj Okazji'. Sklep sprzedaje zwroty z aukcji i nadwyżki z UK w cenach -50%. Pomagaj klientom wybierać okazje i odpowiadaj na pytania o model biznesowy (wysoka jakość, niska cena, sprawdzone produkty)."
     : "You are a shopping assistant for 'Raj Okazji'. We sell auction returns and UK liquidation stock at 50%+ discounts. Help customers find deals and explain our model (high quality, low price, quality-checked products).";
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: query,
       config: {
         systemInstruction,

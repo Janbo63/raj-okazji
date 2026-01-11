@@ -3,37 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raj Okazji STORE v3.21</title>
     
-    <!-- Cache Control: Force browsers to reload this file -->
+    <!-- Cache Busters -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
-    <title>Raj Okazji STORE v3.5.1</title>
-    
-    <!-- Global Error Handler for Debugging Blank Screens -->
+    <!-- Error Handler for Debugging -->
     <script>
-      console.log("Raj Okazji HTML v3.5 loading...");
+      console.log("Raj Okazji Source v3.21 loading...");
       window.onerror = function(msg, url, line, col, error) {
-        var div = document.createElement("div");
-        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:red; color:white; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkred; box-sizing: border-box;";
-        div.innerText = "CRITICAL ERROR v3.5:\n" + msg + "\n\nLocation: " + url + ":" + line + ":" + col + "\n\n" + (error ? error.stack : "");
-        document.body.appendChild(div);
-        return false;
-      };
-      window.onunhandledrejection = function(event) {
-        var div = document.createElement("div");
-        div.style.cssText = "position:fixed; top:0; left:0; width:100%; z-index:9999; background:orange; color:black; padding:20px; font-family:monospace; white-space:pre-wrap; border-bottom: 2px solid darkorange; box-sizing: border-box;";
-        div.innerText = "UNHANDLED PROMISE REJECTION v3.5:\n" + event.reason;
-        document.body.appendChild(div);
+        // Ignore specific browser extension errors
+        if (msg.indexOf('extension') > -1) return;
+        console.error("Global Error:", msg, url, line, col, error);
       };
     </script>
 
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- External Libs -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Config -->
     <script>
       window.process = { env: { NODE_ENV: 'production' } };
       tailwind.config = {
@@ -45,16 +41,9 @@
             },
             colors: {
               brand: {
-                50: '#f5f3ff',
-                100: '#ede9fe',
-                200: '#ddd6fe',
-                300: '#c4b5fd',
-                400: '#a78bfa',
-                500: '#8b5cf6',
-                600: '#7c3aed',
-                700: '#6d28d9',
-                800: '#5b21b6',
-                900: '#4c1d95',
+                50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
+                400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
+                800: '#5b21b6', 900: '#4c1d95',
               }
             }
           }
@@ -70,11 +59,10 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
     <script>
+      // Initialize Lucide Icons if loaded
       document.addEventListener('DOMContentLoaded', () => {
-        if (window.lucide) {
-          window.lucide.createIcons();
-        }
-        console.log("Raj Okazji: Index HTML v3.5 Loaded");
+        if (window.lucide) window.lucide.createIcons();
+        console.log("Raj Okazji HTML v3.21 Loaded");
       });
     </script>
   </body>
