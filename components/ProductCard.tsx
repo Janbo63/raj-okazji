@@ -23,7 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 group hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <Link to={`/product/${item.item_id}`} className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
         <img
-          src={item.item_images.length > 0 ? `https://www.zohoapis.eu/inventory/v1/items/${item.item_id}/images/${item.item_images[0].image_id}` : `https://picsum.photos/seed/${item.item_id}/600/600`}
+          src={item.item_images.length > 0 ? `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}` : `https://picsum.photos/seed/${item.item_id}/600/600`}
           // Note: Zoho Images might require Auth headers. If this image breaks, we need a backend proxy for images.
           onError={(e) => {
             (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.item_id}/600/600`;
@@ -75,8 +75,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             }}
             disabled={item.available_stock <= 0}
             className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${item.available_stock > 0
-                ? 'bg-brand-600 text-white hover:bg-brand-700 active:scale-95 shadow-md shadow-brand-200'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-brand-600 text-white hover:bg-brand-700 active:scale-95 shadow-md shadow-brand-200'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             title={TRANSLATIONS.addToCart[lang]}
           >
