@@ -21,7 +21,7 @@ try {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3300; 
+const PORT = process.env.PORT || 3300;
 
 console.log('-------------------------------------------');
 console.log(`🚀 RAJ OKAZJI BOOT SEQUENCE v${appVersion}`);
@@ -39,21 +39,21 @@ let tokenExpiry = 0;
 async function getZohoAccessToken() {
   const now = Date.now();
   if (cachedAccessToken && now < tokenExpiry) return cachedAccessToken;
-  
+
   const { ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET } = process.env;
   if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) {
     throw new Error('ZOHO_CREDENTIALS_MISSING');
   }
-  
+
   const params = new URLSearchParams();
   params.append('refresh_token', ZOHO_REFRESH_TOKEN);
   params.append('client_id', ZOHO_CLIENT_ID);
   params.append('client_secret', ZOHO_CLIENT_SECRET);
   params.append('grant_type', 'refresh_token');
 
-  const response = await fetch('https://accounts.zoho.com/oauth/v2/token', { method: 'POST', body: params });
+  const response = await fetch('https://accounts.zoho.eu/oauth/v2/token', { method: 'POST', body: params });
   const data = await response.json();
-  
+
   if (!data.access_token) throw new Error('ZOHO_AUTH_FAILED');
 
   cachedAccessToken = data.access_token;
@@ -106,7 +106,7 @@ apiRouter.get('/zoho/items', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.com/api/v1/items?organization_id=${orgId}`, {
+    const response = await fetch(`https://inventory.zoho.eu/api/v1/items?organization_id=${orgId}`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
@@ -120,7 +120,7 @@ apiRouter.get('/zoho/items/:id', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.com/api/v1/items/${req.params.id}?organization_id=${orgId}`, {
+    const response = await fetch(`https://inventory.zoho.eu/api/v1/items/${req.params.id}?organization_id=${orgId}`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
@@ -134,9 +134,9 @@ apiRouter.post('/zoho/salesorders', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.com/api/v1/salesorders?organization_id=${orgId}`, {
+    const response = await fetch(`https://inventory.zoho.eu/api/v1/salesorders?organization_id=${orgId}`, {
       method: 'POST',
-      headers: { 
+      headers: {
         'Authorization': `Zoho-oauthtoken ${token}`,
         'Content-Type': 'application/json'
       },
@@ -176,7 +176,7 @@ app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Not found' });
   }
-  
+
   const indexPath = path.join(distPath, 'index.html');
   if (fs.existsSync(indexPath)) {
     // Force no-cache on the fallback index.html as well
