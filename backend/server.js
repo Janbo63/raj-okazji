@@ -132,7 +132,7 @@ apiRouter.get('/zoho/items', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.eu/api/v1/items?organization_id=${orgId}`, {
+    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
@@ -146,7 +146,7 @@ apiRouter.get('/zoho/items/:id', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.eu/api/v1/items/${req.params.id}?organization_id=${orgId}`, {
+    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items/${req.params.id}?organization_id=${orgId}`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
@@ -160,7 +160,7 @@ apiRouter.post('/zoho/salesorders', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://inventory.zoho.eu/api/v1/salesorders?organization_id=${orgId}`, {
+    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/salesorders?organization_id=${orgId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Zoho-oauthtoken ${token}`,
