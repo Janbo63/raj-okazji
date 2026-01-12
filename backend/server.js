@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
+import { Readable } from 'stream';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -195,7 +196,8 @@ apiRouter.get('/zoho/images/:itemId/:imageId', async (req, res) => {
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
 
     // Stream the image data to the client
-    response.body.pipe(res);
+    // node-fetch v3 returns a Web Stream, which needs conversion to Node stream
+    Readable.fromWeb(response.body).pipe(res);
 
   } catch (error) {
     console.error('Image Proxy Error:', error);
