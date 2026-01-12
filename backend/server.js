@@ -173,81 +173,81 @@ apiRouter.post('/zoho/salesorders', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
 
-  apiRouter.get('/zoho/images/:itemId/:imageId', async (req, res) => {
-    try {
-      const { itemId, imageId } = req.params;
-      const orgId = process.env.ZOHO_ORG_ID;
-      const token = await getZohoAccessToken();
+apiRouter.get('/zoho/images/:itemId/:imageId', async (req, res) => {
+  try {
+    const { itemId, imageId } = req.params;
+    const orgId = process.env.ZOHO_ORG_ID;
+    const token = await getZohoAccessToken();
 
-      // Zoho Image URL format
-      const imageUrl = `https://www.zohoapis.eu/inventory/v1/items/${itemId}/images/${imageId}?organization_id=${orgId}`;
+    // Zoho Image URL format
+    const imageUrl = `https://www.zohoapis.eu/inventory/v1/items/${itemId}/images/${imageId}?organization_id=${orgId}`;
 
-      const response = await fetch(imageUrl, {
-        headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-      });
+    const response = await fetch(imageUrl, {
+      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
+    });
 
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
 
-      // Forward headers (Content-Type is important)
-      res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+    // Forward headers (Content-Type is important)
+    res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
 
-      // Stream the image data to the client
-      response.body.pipe(res);
+    // Stream the image data to the client
+    response.body.pipe(res);
 
-    } catch (error) {
-      console.error('Image Proxy Error:', error);
-      res.status(404).send('Image not found');
-    }
-  });
+  } catch (error) {
+    console.error('Image Proxy Error:', error);
+    res.status(404).send('Image not found');
+  }
+});
 
-  app.use('/api', apiRouter);
+app.use('/api', apiRouter);
 
-  // --- STATIC FILES & SPA FALLBACK ---
-  const distPath = path.resolve(__dirname, '../dist');
+// --- STATIC FILES & SPA FALLBACK ---
+const distPath = path.resolve(__dirname, '../dist');
 
-  // Helper to disable caching for index.html
-  const setNoCache = (res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-  };
+// Helper to disable caching for index.html
+const setNoCache = (res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+};
 
-  // Serve static assets normally, but force no-cache on index.html if requested directly
-  app.use(express.static(distPath, {
-    setHeaders: (res, path) => {
-      if (path.endsWith('index.html')) {
-        setNoCache(res);
-      }
-    }
-  }));
-
-  // Express 5 SPA Fallback
-  app.get(/.*/, (req, res) => {
-    // If it's an API call that leaked through, 404 it
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-
-    const indexPath = path.join(distPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      // Force no-cache on the fallback index.html as well
+// Serve static assets normally, but force no-cache on index.html if requested directly
+app.use(express.static(distPath, {
+  setHeaders: (res, path) => {
+    if (path.endsWith('index.html')) {
       setNoCache(res);
-      res.sendFile(indexPath);
-    } else {
-      res.status(404).send(`
+    }
+  }
+}));
+
+// Express 5 SPA Fallback
+app.get(/.*/, (req, res) => {
+  // If it's an API call that leaked through, 404 it
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+
+  const indexPath = path.join(distPath, 'index.html');
+  if (fs.existsSync(indexPath)) {
+    // Force no-cache on the fallback index.html as well
+    setNoCache(res);
+    res.sendFile(indexPath);
+  } else {
+    res.status(404).send(`
       <h1>Frontend Not Found</h1>
       <p>The 'dist' directory is missing. Please run <code>npm run build</code> on the server.</p>
     `);
-    }
-  });
+  }
+});
 
-  const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[READY] Listening on http://0.0.0.0:${PORT}`);
-  });
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`[READY] Listening on http://0.0.0.0:${PORT}`);
+});
 
-  server.on('error', (err) => {
-    console.error('[CRITICAL] Server failed to bind to port:', err.message);
-    process.exit(1);
-  });
+server.on('error', (err) => {
+  console.error('[CRITICAL] Server failed to bind to port:', err.message);
+  process.exit(1);
