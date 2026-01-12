@@ -102,6 +102,32 @@ apiRouter.get('/version', (req, res) => {
   res.json({ version: appVersion, timestamp: new Date().toISOString() });
 });
 
+apiRouter.get('/health-check', async (req, res) => {
+  const check = {
+    env: {
+      ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID ? 'Set' : 'Missing',
+      ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET ? 'Set' : 'Missing',
+      ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN ? 'Set' : 'Missing',
+      ZOHO_ORG_ID: process.env.ZOHO_ORG_ID ? 'Set' : 'Missing',
+      PORT: process.env.PORT
+    },
+    connectivity: 'Pending',
+    error: null
+  };
+
+  try {
+    const token = await getZohoAccessToken();
+    check.connectivity = token ? 'Success (Token Generated)' : 'Failed';
+  } catch (e) {
+    check.connectivity = 'Failed';
+    check.error = e.message;
+    // If it's an invalid client error, it reveals secret issues
+    if (e.message.includes('invalid_client')) check.hint = 'Client ID/Secret is wrong';
+  }
+
+  res.json(check);
+});
+
 apiRouter.get('/zoho/items', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
