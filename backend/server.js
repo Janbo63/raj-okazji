@@ -251,3 +251,5 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 server.on('error', (err) => {
   console.error('[CRITICAL] Server failed to bind to port:', err.message);
   process.exit(1);
+});
+});
