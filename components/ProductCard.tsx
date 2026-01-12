@@ -14,16 +14,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
 
   const name = lang === Language.PL ? item.cf_item_name_pl : item.cf_item_name_en;
   const category = lang === Language.PL ? item.cf_category_pl : item.cf_category_en;
-  
-  const discountPercent = item.cf_retail_price 
+
+  const discountPercent = item.cf_retail_price
     ? Math.round(((item.cf_retail_price - item.rate) / item.cf_retail_price) * 100)
     : 0;
 
   return (
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 group hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <Link to={`/product/${item.item_id}`} className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
-        <img 
-          src={`https://picsum.photos/seed/${item.item_id}/600/600`} 
+        <img
+          src={item.item_images.length > 0 ? `https://www.zohoapis.eu/inventory/v1/items/${item.item_id}/images/${item.item_images[0].image_id}` : `https://picsum.photos/seed/${item.item_id}/600/600`}
+          // Note: Zoho Images might require Auth headers. If this image breaks, we need a backend proxy for images.
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.item_id}/600/600`;
+          }}
           alt={name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
@@ -45,7 +49,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
             {category}
           </span>
         </div>
-        
+
         <Link to={`/product/${item.item_id}`}>
           <h3 className="text-lg font-bold text-gray-900 line-clamp-2 hover:text-brand-600 transition-colors h-14 mb-2">
             {name}
@@ -63,18 +67,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
               {item.rate.toFixed(2)} <span className="text-sm font-bold">zł</span>
             </p>
           </div>
-          
-          <button 
+
+          <button
             onClick={(e) => {
               e.preventDefault();
               addToCart(item);
             }}
             disabled={item.available_stock <= 0}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
-              item.available_stock > 0 
-                ? 'bg-brand-600 text-white hover:bg-brand-700 active:scale-95 shadow-md shadow-brand-200' 
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${item.available_stock > 0
+                ? 'bg-brand-600 text-white hover:bg-brand-700 active:scale-95 shadow-md shadow-brand-200'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
+              }`}
             title={TRANSLATIONS.addToCart[lang]}
           >
             <i data-lucide="plus" className="w-6 h-6"></i>
