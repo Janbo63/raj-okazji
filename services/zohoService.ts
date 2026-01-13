@@ -11,8 +11,8 @@ const API_BASE = '/api/zoho';
 
 const mapZohoItem = (raw: any): ZohoItem => {
   if (!raw) return {} as ZohoItem;
-  
-  const getCustomField = (label: string) => 
+
+  const getCustomField = (label: string) =>
     raw.custom_fields?.find((f: any) => f.label === label || f.placeholder === label)?.value || '';
 
   return {
@@ -22,13 +22,14 @@ const mapZohoItem = (raw: any): ZohoItem => {
     available_stock: raw.available_stock || 0,
     status: raw.status === 'active' ? 'active' : 'inactive',
     item_images: Array.isArray(raw.item_images) ? raw.item_images : [],
-    cf_item_name_pl: getCustomField('cf_item_name_pl') || raw.name || '',
-    cf_item_name_en: getCustomField('cf_item_name_en') || raw.name || '',
-    cf_description_pl: getCustomField('cf_description_pl') || raw.description || '',
-    cf_description_en: getCustomField('cf_description_en') || raw.description || '',
-    cf_category_pl: getCustomField('cf_category_pl') || 'Inne',
-    cf_category_en: getCustomField('cf_category_en') || 'Other',
-    cf_retail_price: parseFloat(getCustomField('cf_retail_price')) || (raw.rate ? raw.rate * 2 : 0),
+    image_urls: getCustomField('cf_image_urls') ? getCustomField('cf_image_urls').split(' ') : [],
+    cf_item_name_pl: getCustomField('cf_polish_name') || raw.name || '',
+    cf_item_name_en: raw.name || '',
+    cf_description_pl: getCustomField('cf_product_description') || raw.description || '',
+    cf_description_en: raw.description || '', // Fallback for EN description
+    cf_category_pl: getCustomField('cf_category') || 'Inne', // Assuming category is same for both or needs translation map elsewhere
+    cf_category_en: getCustomField('cf_category') || 'Other',
+    cf_retail_price: parseFloat(getCustomField('cf_retail_recommended_price')) || (raw.rate ? Math.ceil(raw.rate * 1.5) : 0), // Default logic if RRP missing
   };
 };
 

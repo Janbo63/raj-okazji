@@ -23,10 +23,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
     <div className="bg-white rounded-2xl overflow-hidden border border-gray-200 group hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       <Link to={`/product/${item.item_id}`} className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
         <img
-          src={item.item_images.length > 0 ? `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}` : `https://picsum.photos/seed/${item.item_id}/600/600`}
-          // Note: Zoho Images might require Auth headers. If this image breaks, we need a backend proxy for images.
+        <img
+          src={
+            item.image_urls && item.image_urls.length > 0 
+              ? item.image_urls[0] 
+              : item.item_images.length > 0 
+                ? `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}` 
+                : `https://picsum.photos/seed/${item.item_id}/600/600`
+          }
           onError={(e) => {
-            (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${item.item_id}/600/600`;
+             // Fallback chain: Public URL -> Proxy -> Placeholder
+             const target = e.target as HTMLImageElement;
+             if (item.item_images.length > 0 && !target.src.includes('/api/zoho')) {
+                 target.src = `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}`;
+             } else {
+                 target.src = `https://picsum.photos/seed/${item.item_id}/600/600`;
+             }
           }}
           alt={name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

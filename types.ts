@@ -11,6 +11,7 @@ export interface ZohoItem {
   available_stock: number;
   status: 'active' | 'inactive';
   item_images: { image_id: string; image_name: string; image_type: string }[];
+  image_urls: string[]; // Add direct URLs support
   cf_item_name_pl: string;
   cf_item_name_en: string;
   cf_description_pl: string;
