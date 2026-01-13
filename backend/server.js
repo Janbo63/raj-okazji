@@ -152,10 +152,14 @@ apiRouter.get('/zoho/debug-fields', async (req, res) => {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
-    const firstItem = data.items?.[0];
+    // Find first Listed product
+    const listedItem = data.items?.find(i => i.cf_allegro_status === 'Listed');
     res.json({
-      custom_fields: firstItem?.custom_fields || [],
-      all_keys: firstItem ? Object.keys(firstItem) : []
+      found_listed_product: !!listedItem,
+      item_name: listedItem?.name,
+      cf_allegro_status: listedItem?.cf_allegro_status,
+      cf_image_urls: listedItem?.cf_image_urls,
+      all_cf_fields: listedItem ? Object.keys(listedItem).filter(k => k.startsWith('cf_')) : []
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
