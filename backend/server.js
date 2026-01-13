@@ -148,28 +148,32 @@ apiRouter.get('/zoho/debug-fields', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
     const token = await getZohoAccessToken();
-    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
+
+    // First, get list to find a Listed item ID
+    const listResponse = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
-    const data = await response.json();
-    // Get first 3 Listed products
-    const listedItems = data.items?.filter(i => i.cf_allegro_status === 'Listed').slice(0, 3) || [];
+    const listData = await listResponse.json();
+    const listedItem = listData.items?.find(i => i.cf_allegro_status === 'Listed');
 
-    const itemsDebug = listedItems.map(item => {
-      const cfFields = {};
-      Object.keys(item).filter(k => k.startsWith('cf_')).forEach(key => {
-        cfFields[key] = item[key];
-      });
-      return {
-        name: item.name,
-        sku: item.sku,
-        cf_fields: cfFields
-      };
+    if (!listedItem) {
+      return res.json({ error: 'No Listed product found' });
+    }
+
+    // Now fetch the FULL details of that single item
+    const itemResponse = await fetch(`https://www.zohoapis.eu/inventory/v1/items/${listedItem.item_id}?organization_id=${orgId}`, {
+      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
+    const itemData = await itemResponse.json();
+    const fullItem = itemData.item;
 
     res.json({
-      total_listed_found: listedItems.length,
-      products: itemsDebug
+      item_name: fullItem?.name,
+      sku: fullItem?.sku,
+      custom_fields_array: fullItem?.custom_fields || [],
+      has_cf_image_urls_property: fullItem?.hasOwnProperty('cf_image_urls'),
+      cf_image_urls_direct: fullItem?.cf_image_urls,
+      cf_image_1_direct: fullItem?.cf_image_1
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
