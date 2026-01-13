@@ -143,6 +143,25 @@ apiRouter.get('/zoho/items', async (req, res) => {
   }
 });
 
+// DEBUG: Inspect custom fields structure
+apiRouter.get('/zoho/debug-fields', async (req, res) => {
+  try {
+    const orgId = process.env.ZOHO_ORG_ID;
+    const token = await getZohoAccessToken();
+    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
+      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
+    });
+    const data = await response.json();
+    const firstItem = data.items?.[0];
+    res.json({
+      custom_fields: firstItem?.custom_fields || [],
+      all_keys: firstItem ? Object.keys(firstItem) : []
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 apiRouter.get('/zoho/items/:id', async (req, res) => {
   try {
     const orgId = process.env.ZOHO_ORG_ID;
