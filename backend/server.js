@@ -152,14 +152,24 @@ apiRouter.get('/zoho/debug-fields', async (req, res) => {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
     });
     const data = await response.json();
-    // Find first Listed product
-    const listedItem = data.items?.find(i => i.cf_allegro_status === 'Listed');
+    // Get first 3 Listed products
+    const listedItems = data.items?.filter(i => i.cf_allegro_status === 'Listed').slice(0, 3) || [];
+
+    const itemsDebug = listedItems.map(item => {
+      const cfFields = {};
+      Object.keys(item).filter(k => k.startsWith('cf_')).forEach(key => {
+        cfFields[key] = item[key];
+      });
+      return {
+        name: item.name,
+        sku: item.sku,
+        cf_fields: cfFields
+      };
+    });
+
     res.json({
-      found_listed_product: !!listedItem,
-      item_name: listedItem?.name,
-      cf_allegro_status: listedItem?.cf_allegro_status,
-      cf_image_urls: listedItem?.cf_image_urls,
-      all_cf_fields: listedItem ? Object.keys(listedItem).filter(k => k.startsWith('cf_')) : []
+      total_listed_found: listedItems.length,
+      products: itemsDebug
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
