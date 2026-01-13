@@ -29,15 +29,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
               ? item.image_urls[0]
               : item.item_images.length > 0
                 ? `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}`
-                : `https://picsum.photos/seed/${item.item_id}/600/600`
+                : `https://placehold.co/600x600/e5e7eb/9ca3af?text=No+Image`
           }
           onError={(e) => {
-            // Fallback chain: Public URL -> Proxy -> Placeholder
+            // Fallback chain: Public URL -> Proxy -> No Image placeholder
             const target = e.target as HTMLImageElement;
             if (item.item_images.length > 0 && !target.src.includes('/api/zoho')) {
               target.src = `/api/zoho/images/${item.item_id}/${item.item_images[0].image_id}`;
             } else {
-              target.src = `https://picsum.photos/seed/${item.item_id}/600/600`;
+              target.src = `https://placehold.co/600x600/e5e7eb/9ca3af?text=No+Image`;
             }
           }}
           alt={name}

@@ -56,8 +56,11 @@ const ProductDetail: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-square rounded-3xl overflow-hidden bg-gray-50 relative">
             <img
-              src={`https://picsum.photos/seed/${item.item_id}/1200/1200`}
-              className="w-full h-full object-cover"
+              src={item.image_urls && item.image_urls.length > 0 ? item.image_urls[activeImage] || item.image_urls[0] : 'https://placehold.co/800x800/e5e7eb/9ca3af?text=No+Image+Available'}
+              className="w-full h-full object-contain p-4"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://placehold.co/800x800/e5e7eb/9ca3af?text=Image+Not+Available';
+              }}
               alt={name}
             />
             {discountPercent > 0 && (
@@ -67,15 +70,26 @@ const ProductDetail: React.FC = () => {
             )}
           </div>
           <div className="grid grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((_, i) => (
-              <button
-                key={i}
-                className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === i ? 'border-brand-600 opacity-100 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                onClick={() => setActiveImage(i)}
-              >
-                <img src={`https://picsum.photos/seed/${item.item_id}-${i}/300/300`} className="w-full h-full object-cover" alt="" />
-              </button>
-            ))}
+            {item.image_urls && item.image_urls.length > 0 ? (
+              item.image_urls.map((img, i) => (
+                <button
+                  key={i}
+                  className={`aspect-square rounded-xl overflow-hidden border-2 transition-all p-2 bg-white ${activeImage === i ? 'border-brand-600 opacity-100 shadow-lg' : 'border-gray-100 opacity-60 hover:opacity-100'}`}
+                  onClick={() => setActiveImage(i)}
+                >
+                  <img
+                    src={img}
+                    className="w-full h-full object-contain"
+                    alt={`${name} ${i + 1}`}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/300x300/e5e7eb/9ca3af?text=N/A';
+                    }}
+                  />
+                </button>
+              ))
+            ) : (
+              <div className="col-span-4 text-center text-gray-400 text-sm">No images available</div>
+            )}
           </div>
         </div>
 
