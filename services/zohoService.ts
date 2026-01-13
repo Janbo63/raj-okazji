@@ -12,8 +12,9 @@ const API_BASE = '/api/zoho';
 const mapZohoItem = (raw: any): ZohoItem => {
   if (!raw) return {} as ZohoItem;
 
-  const getCustomField = (label: string) =>
-    raw.custom_fields?.find((f: any) => f.label === label || f.placeholder === label)?.value || '';
+  // Zoho returns custom fields as direct properties on the object (e.g., raw.cf_image_urls)
+  // NOT in a custom_fields array
+  const getCustomField = (fieldName: string) => raw[fieldName] || '';
 
   return {
     item_id: raw.item_id,
@@ -27,9 +28,9 @@ const mapZohoItem = (raw: any): ZohoItem => {
     cf_item_name_en: raw.name || '',
     cf_description_pl: getCustomField('cf_product_description') || raw.description || '',
     cf_description_en: raw.description || '', // Fallback for EN description
-    cf_category_pl: getCustomField('cf_category') || 'Inne', // Assuming category is same for both or needs translation map elsewhere
+    cf_category_pl: getCustomField('cf_category') || 'Inne',
     cf_category_en: getCustomField('cf_category') || 'Other',
-    cf_retail_price: parseFloat(getCustomField('cf_retail_recommended_price')) || (raw.rate ? Math.ceil(raw.rate * 1.5) : 0), // Default logic if RRP missing
+    cf_retail_price: parseFloat(getCustomField('cf_retail_recommended_price')) || (raw.rate ? Math.ceil(raw.rate * 1.5) : 0),
   };
 };
 
@@ -44,7 +45,7 @@ export const fetchItems = async (): Promise<ZohoItem[]> => {
     }
     const data = await response.json();
     return (data.items || [])
-      .filter((i: any) => i.status === 'active')
+      .filter((i: any) => i.status === 'active' && i.cf_allegro_status === 'Listed')
       .map(mapZohoItem);
   } catch (error) {
     console.error('Zoho Service List Error:', error);
