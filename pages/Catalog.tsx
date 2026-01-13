@@ -86,8 +86,8 @@ const Catalog: React.FC = () => {
             <button
               onClick={() => setCategoryFilter('')}
               className={`whitespace-nowrap px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${categoryFilter === ''
-                  ? 'bg-brand-600 text-white border-brand-600 shadow-xl shadow-brand-100'
-                  : 'bg-white text-gray-400 border-gray-100 hover:border-brand-200'
+                ? 'bg-brand-600 text-white border-brand-600 shadow-xl shadow-brand-100'
+                : 'bg-white text-gray-400 border-gray-100 hover:border-brand-200'
                 }`}
             >
               Wszystkie
@@ -97,11 +97,11 @@ const Catalog: React.FC = () => {
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
                 className={`whitespace-nowrap px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border-2 ${categoryFilter === cat
-                    ? 'bg-brand-600 text-white border-brand-600 shadow-xl shadow-brand-100'
-                    : 'bg-white text-gray-400 border-gray-100 hover:border-brand-200'
+                  ? 'bg-brand-600 text-white border-brand-600 shadow-xl shadow-brand-100'
+                  : 'bg-white text-gray-400 border-gray-100 hover:border-brand-200'
                   }`}
               >
-                {CATEGORY_TRANSLATIONS[cat][lang]}
+                {CATEGORY_TRANSLATIONS[cat]?.[lang] || cat}
               </button>
             ))}
           </div>
