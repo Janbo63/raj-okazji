@@ -51,7 +51,7 @@ const mapZohoItem = (raw: any): ZohoItem => {
         getCustomField('cf_image_5')
       ].filter(url => url && url.length > 0);
     })(),
-    cf_item_name_pl: getCustomField('cf_polish_name') || raw.name || '',
+    cf_item_name_pl: raw.name || '', // No separate Polish name field found in Zoho
     cf_item_name_en: raw.name || '',
     cf_description_pl: getCustomField('cf_polish_decription') || raw.description || '', // Note: Zoho has typo "decription"
     cf_description_en: raw.description || '',
