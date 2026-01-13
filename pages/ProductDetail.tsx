@@ -13,6 +13,17 @@ const ProductDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
 
+  // Combine public URLs and internal images for gallery
+  const allImages = item ? [
+    ...(item.image_urls || []),
+    ...(item.item_images || []).map(img => `/api/zoho/images/${item.item_id}/${img.image_id}`)
+  ] : [];
+
+  // If no images at all, add a placeholder
+  if (item && allImages.length === 0) {
+    allImages.push(`https://picsum.photos/seed/${item.item_id}/800/800`);
+  }
+
   useEffect(() => {
     if (id) {
       setLoading(true);
@@ -44,8 +55,8 @@ const ProductDetail: React.FC = () => {
         {/* Images */}
         <div className="lg:col-span-7 space-y-4">
           <div className="aspect-square rounded-3xl overflow-hidden bg-gray-50 relative">
-            <img 
-              src={`https://picsum.photos/seed/${item.item_id}/1200/1200`} 
+            <img
+              src={`https://picsum.photos/seed/${item.item_id}/1200/1200`}
               className="w-full h-full object-cover"
               alt={name}
             />
@@ -57,8 +68,8 @@ const ProductDetail: React.FC = () => {
           </div>
           <div className="grid grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((_, i) => (
-              <button 
-                key={i} 
+              <button
+                key={i}
                 className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${activeImage === i ? 'border-brand-600 opacity-100 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'}`}
                 onClick={() => setActiveImage(i)}
               >
@@ -75,7 +86,7 @@ const ProductDetail: React.FC = () => {
               {lang === Language.PL ? item.cf_category_pl : item.cf_category_en}
             </span>
           </div>
-          
+
           <h1 className="text-4xl font-black text-gray-900 leading-tight mb-4">
             {name}
           </h1>
@@ -114,15 +125,15 @@ const ProductDetail: React.FC = () => {
               </span>
             </div>
             <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-              <div 
-                className={`h-full transition-all duration-1000 ${item.available_stock > 5 ? 'bg-green-500' : 'bg-orange-500'}`} 
+              <div
+                className={`h-full transition-all duration-1000 ${item.available_stock > 5 ? 'bg-green-500' : 'bg-orange-500'}`}
                 style={{ width: `${Math.min(item.available_stock * 10, 100)}%` }}
               ></div>
             </div>
           </div>
 
           <div className="mt-auto space-y-4">
-            <button 
+            <button
               onClick={() => addToCart(item)}
               disabled={item.available_stock <= 0}
               className="w-full bg-brand-600 text-white py-6 rounded-[1.5rem] font-black text-xl hover:bg-brand-700 shadow-xl shadow-brand-100 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
@@ -130,7 +141,7 @@ const ProductDetail: React.FC = () => {
               <i data-lucide="shopping-cart" className="w-6 h-6"></i>
               {TRANSLATIONS.addToCart[lang]}
             </button>
-            <Link 
+            <Link
               to="/checkout"
               className="w-full border-2 border-brand-600 text-brand-600 py-4 rounded-[1.5rem] font-bold text-center hover:bg-brand-50 transition-all flex items-center justify-center gap-2"
             >
