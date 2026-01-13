@@ -23,7 +23,14 @@ const mapZohoItem = (raw: any): ZohoItem => {
     available_stock: raw.available_stock || 0,
     status: raw.status === 'active' ? 'active' : 'inactive',
     item_images: Array.isArray(raw.item_images) ? raw.item_images : [],
-    image_urls: getCustomField('cf_image_urls') ? getCustomField('cf_image_urls').split(/\s+/).filter((url: string) => url.length > 0) : [],
+    // Collect images from cf_image_1 through cf_image_5 fields
+    image_urls: [
+      getCustomField('cf_image_1'),
+      getCustomField('cf_image_2'),
+      getCustomField('cf_image_3'),
+      getCustomField('cf_image_4'),
+      getCustomField('cf_image_5')
+    ].filter(url => url && url.length > 0),
     cf_item_name_pl: getCustomField('cf_polish_name') || raw.name || '',
     cf_item_name_en: raw.name || '',
     cf_description_pl: getCustomField('cf_product_description') || raw.description || '',
