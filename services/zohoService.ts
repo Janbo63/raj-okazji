@@ -12,9 +12,21 @@ const API_BASE = '/api/zoho';
 const mapZohoItem = (raw: any): ZohoItem => {
   if (!raw) return {} as ZohoItem;
 
-  // Zoho returns custom fields as direct properties on the object (e.g., raw.cf_image_urls)
-  // NOT in a custom_fields array
-  const getCustomField = (fieldName: string) => raw[fieldName] || '';
+  // Zoho returns custom fields in TWO ways:
+  // 1. As direct properties (e.g., raw.cf_image_1) - for single-line fields in list view
+  // 2. In custom_fields array (e.g., {api_name: "cf_image_urls", value: "..."}) - for multi-line fields, only in single item view
+  const getCustomField = (fieldName: string) => {
+    // First try direct property
+    if (raw[fieldName]) return raw[fieldName];
+
+    // Then search custom_fields array
+    if (Array.isArray(raw.custom_fields)) {
+      const field = raw.custom_fields.find((f: any) => f.api_name === fieldName);
+      if (field) return field.value;
+    }
+
+    return '';
+  };
 
   return {
     item_id: raw.item_id,
@@ -23,20 +35,28 @@ const mapZohoItem = (raw: any): ZohoItem => {
     available_stock: raw.available_stock || 0,
     status: raw.status === 'active' ? 'active' : 'inactive',
     item_images: Array.isArray(raw.item_images) ? raw.item_images : [],
-    // Collect images from cf_image_1 through cf_image_5 fields
-    image_urls: [
-      getCustomField('cf_image_1'),
-      getCustomField('cf_image_2'),
-      getCustomField('cf_image_3'),
-      getCustomField('cf_image_4'),
-      getCustomField('cf_image_5')
-    ].filter(url => url && url.length > 0),
+    // Multi-line cf_image_urls field (preferred) or individual cf_image_X fields (fallback)
+    image_urls: (() => {
+      const imageUrlsField = getCustomField('cf_image_urls');
+      if (imageUrlsField) {
+        // Split by newlines (\r\n or \n) and filter empty strings
+        return imageUrlsField.split(/\r?\n/).filter((url: string) => url.trim().length > 0);
+      }
+      // Fallback to individual image fields
+      return [
+        getCustomField('cf_image_1'),
+        getCustomField('cf_image_2'),
+        getCustomField('cf_image_3'),
+        getCustomField('cf_image_4'),
+        getCustomField('cf_image_5')
+      ].filter(url => url && url.length > 0);
+    })(),
     cf_item_name_pl: getCustomField('cf_polish_name') || raw.name || '',
     cf_item_name_en: raw.name || '',
-    cf_description_pl: getCustomField('cf_product_description') || raw.description || '',
-    cf_description_en: raw.description || '', // Fallback for EN description
-    cf_category_pl: getCustomField('cf_category') || 'Inne',
-    cf_category_en: getCustomField('cf_category') || 'Other',
+    cf_description_pl: getCustomField('cf_polish_decription') || raw.description || '', // Note: Zoho has typo "decription"
+    cf_description_en: raw.description || '',
+    cf_category_pl: getCustomField('cf_jobalot_category_string') || 'Inne',
+    cf_category_en: getCustomField('cf_jobalot_category_string') || 'Other',
     cf_retail_price: parseFloat(getCustomField('cf_retail_recommended_price')) || (raw.rate ? Math.ceil(raw.rate * 1.5) : 0),
   };
 };
