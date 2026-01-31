@@ -11,7 +11,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3300;
+const PORT = parseInt(process.env.PORT, 10) || 3300;
+
+console.log('--- STARTUP DEBUG ---');
+console.log('Node Version:', process.version);
+console.log('Current WorkDir:', process.cwd());
+console.log('__dirname:', __dirname);
+console.log('Target Port:', PORT);
+console.log('ZOHO_REGION:', process.env.ZOHO_REGION || 'eu (default)');
 
 app.use(cors());
 app.use(express.json());
@@ -62,13 +69,15 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'online', port: PORT, timestamp: new Date() });
 });
 
-// --- Static Files ---
+const staticPath = path.join(__dirname, '../dist');
+console.log('Static Files Path:', staticPath);
+
 // Serve static files from the 'dist' directory (one level up from 'backend')
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for client-side routing
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+  res.sendFile(path.join(staticPath, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
