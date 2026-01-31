@@ -76,7 +76,7 @@ console.log('Static Files Path:', staticPath);
 app.use(express.static(staticPath));
 
 // Catch-all route to serve index.html for client-side routing
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
