@@ -3,7 +3,12 @@ import Stripe from 'stripe';
 import fetch from 'node-fetch';
 import { calculateShippingCost } from '../utils/shipping.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+let stripe;
+if (process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+} else {
+    console.warn('[WARNING] STRIPE_SECRET_KEY is missing. Payment features will be disabled.');
+}
 
 export function createPaymentRouter(getAccessToken) {
     const router = express.Router();
@@ -12,6 +17,7 @@ export function createPaymentRouter(getAccessToken) {
     const apiBase = region === 'eu' ? 'https://www.zohoapis.eu/inventory/v1' : 'https://inventory.zoho.com/api/v1';
 
     router.post('/create-checkout-session', async (req, res) => {
+        if (!stripe) return res.status(503).json({ error: 'Payment service is currently unavailable.' });
         const { items, success_url, cancel_url, customer_email, metadata } = req.body;
 
         try {
@@ -66,6 +72,7 @@ export function createPaymentRouter(getAccessToken) {
     });
 
     router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+        if (!stripe) return res.status(503).send('Stripe not configured');
         const sig = req.headers['stripe-signature'];
         let event;
 

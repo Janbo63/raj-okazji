@@ -51,6 +51,9 @@ jobs:
             ZOHO_REFRESH_TOKEN="${{ secrets.ZOHO_REFRESH_TOKEN }}" \
             ZOHO_ORG_ID="${{ secrets.ZOHO_ORG_ID }}" \
             ZOHO_REGION="${{ secrets.ZOHO_REGION }}" \
+            ZOHO_GUEST_CUSTOMER_ID="${{ secrets.ZOHO_GUEST_CUSTOMER_ID }}" \
+            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            STRIPE_WEBHOOK_SECRET="${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
             GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             pm2 start backend/server.js --name raj-okazji-webstore --update-env
             
