@@ -181,6 +181,10 @@ export const TRANSLATIONS: TranslationDict = {
     pl: 'Sposób dostawy',
     en: 'Delivery method'
   },
+  deliveryAddress: {
+    pl: 'Adres dostawy',
+    en: 'Delivery address'
+  },
   selectPointOnMap: {
     pl: 'Wybierz punkt na mapie',
     en: 'Select point on map'

@@ -301,19 +301,39 @@ const Checkout: React.FC = () => {
                           {/* InPost Geowidget Container */}
                           <div
                             id="inpost-geowidget"
-                            className="w-full h-full rounded-2xl overflow-hidden"
+                            className="w-full h-full rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center"
                             ref={(el) => {
-                              if (el && window.InPost) {
-                                setTimeout(() => {
+                              if (!el) return;
+                              const initWidget = () => {
+                                if (window.InPost) {
                                   new window.InPost.Geowidget({
                                     container: 'inpost-geowidget',
                                     onPoint: (point: any) => handleLockerSelect(point),
                                     config: 'paczkomat'
                                   });
-                                }, 100);
-                              }
+                                } else {
+                                  // Retry once after 500ms
+                                  setTimeout(() => {
+                                    if (window.InPost) {
+                                      new window.InPost.Geowidget({
+                                        container: 'inpost-geowidget',
+                                        onPoint: (point: any) => handleLockerSelect(point),
+                                        config: 'paczkomat'
+                                      });
+                                    }
+                                  }, 500);
+                                }
+                              };
+                              initWidget();
                             }}
-                          ></div>
+                          >
+                            <div className="text-center p-8">
+                              <div className="w-12 h-12 border-4 border-brand-600 border-t-transparent animate-spin rounded-full mx-auto mb-4"></div>
+                              <p className="text-sm font-bold text-gray-500">
+                                {lang === 'pl' ? 'Ładowanie mapy Paczkomatów...' : 'Loading locker map...'}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
