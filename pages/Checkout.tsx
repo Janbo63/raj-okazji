@@ -4,13 +4,32 @@ import { useAppContext } from '../App';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { createSalesOrder } from '../services/zohoService';
-import { CheckCircle2, ShoppingBasket, User, Truck, Package, MapPin, CreditCard, Lock, Zap } from 'lucide-react';
+import { CheckCircle2, ShoppingBasket, User, Truck, Package, MapPin, CreditCard, Lock, Zap, Map as MapIcon } from 'lucide-react';
+
+declare global {
+  interface Window {
+    InPost: any;
+  }
+}
 
 const Checkout: React.FC = () => {
   const { lang, cart, updateQuantity, clearCart } = useAppContext();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState<{ order_number: string } | null>(null);
+  const [paymentCanceled, setPaymentCanceled] = useState(false);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success')) {
+      // In a real app, we'd poll or wait for webhook, but for now show success
+      setOrderDone({ order_number: 'PENDING' });
+      clearCart();
+    }
+    if (params.get('canceled')) {
+      setPaymentCanceled(true);
+    }
+  }, []);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -24,6 +43,13 @@ const Checkout: React.FC = () => {
     paymentMethod: 'cash_on_delivery'
   });
 
+  const [showMap, setShowMap] = useState(false);
+
+  const handleLockerSelect = (point: any) => {
+    setFormData({ ...formData, paczkomatId: point.name, address: point.address_details?.street + ' ' + point.address_details?.building_number, city: point.address_details?.city });
+    setShowMap(false);
+  };
+
   const subtotal = cart.reduce((acc, item) => acc + item.rate * item.quantity, 0);
   const shipping = formData.paymentMethod === 'cash_on_delivery' ? 19.99 : 14.99;
   const total = subtotal + shipping;
@@ -36,11 +62,35 @@ const Checkout: React.FC = () => {
 
     setLoading(true);
     try {
-      const res = await createSalesOrder({ ...formData, items: cart, total, lang });
-      setOrderDone(res);
-      clearCart();
+      const response = await fetch('/api/payment/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map(item => ({
+            name: lang === Language.PL ? item.cf_item_name_pl : item.cf_item_name_en,
+            price: item.rate,
+            quantity: item.quantity,
+            image: `https://picsum.photos/seed/${item.item_id}/600/600`
+          })),
+          customer_email: formData.email,
+          success_url: `${window.location.origin}/checkout?success=true`,
+          cancel_url: `${window.location.origin}/checkout?canceled=true`,
+          metadata: {
+            ...formData,
+            cart: JSON.stringify(cart.map(i => ({ id: i.item_id, q: i.quantity })))
+          }
+        })
+      });
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error('No redirect URL');
+      }
     } catch (err) {
-      alert(lang === 'pl' ? 'Błąd zamówienia' : 'Order error');
+      console.error('Payment Error:', err);
+      alert(lang === 'pl' ? 'Błąd płatności' : 'Payment error');
     } finally {
       setLoading(false);
     }
@@ -53,10 +103,17 @@ const Checkout: React.FC = () => {
           <CheckCircle2 className="w-12 h-12" />
         </div>
         <h1 className="text-4xl font-black text-gray-900 mb-4">{TRANSLATIONS.orderSuccessTitle[lang]}</h1>
-        <p className="text-xl text-gray-500 mb-10 leading-relaxed">
-          {TRANSLATIONS.orderSuccessText[lang]} <br />
-          Order: <span className="font-black text-brand-600">#{orderDone.order_number}</span>
-        </p>
+        {orderDone.order_number === 'PENDING' ? (
+          <p className="text-xl text-gray-500 mb-10 leading-relaxed">
+            Payment received! <br />
+            We are processing your order. You will receive an email shortly.
+          </p>
+        ) : (
+          <p className="text-xl text-gray-500 mb-10 leading-relaxed">
+            {TRANSLATIONS.orderSuccessText[lang]} <br />
+            Order: <span className="font-black text-brand-600">#{orderDone.order_number}</span>
+          </p>
+        )}
         <div className="grid sm:grid-cols-2 gap-4">
           <a href="/" className="bg-brand-600 text-white px-8 py-4 rounded-2xl font-black text-lg hover:bg-brand-700 transition-all">
             {TRANSLATIONS.backToStore[lang]}

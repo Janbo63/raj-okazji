@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createZohoRouter } from './routes/zoho.js';
 import aiRouter from './routes/ai.js';
+import { createPaymentRouter } from './routes/payment.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +65,7 @@ async function getZohoAccessToken() {
 // --- Routes ---
 app.use('/api/zoho', createZohoRouter(getZohoAccessToken));
 app.use('/api/gemini', aiRouter);
+app.use('/api/payment', createPaymentRouter(getZohoAccessToken));
 
 app.get('/api/status', (req, res) => {
   res.json({ status: 'online', port: PORT, timestamp: new Date() });
