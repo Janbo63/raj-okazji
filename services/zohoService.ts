@@ -72,7 +72,7 @@ export const fetchItems = async (): Promise<ZohoItem[]> => {
     }
     const data = await response.json();
     return (data.items || [])
-      .filter((i: any) => i.status === 'active' && i.cf_allegro_status === 'Listed')
+      .filter((i: any) => i.cf_allegro_status === 'Listed' && i.available_stock > 0)
       .map(mapZohoItem);
   } catch (error) {
     console.error('Zoho Service List Error:', error);

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ZohoItem, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { useAppContext } from '../App';
+import { Plus } from 'lucide-react';
 
 interface ProductCardProps {
   item: ZohoItem;
@@ -92,7 +93,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ item }) => {
               }`}
             title={TRANSLATIONS.addToCart[lang]}
           >
-            <i data-lucide="plus" className="w-6 h-6"></i>
+            <Plus className="w-6 h-6" />
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useAppContext } from '../App';
 import ProductCard from '../components/ProductCard';
 import { TRANSLATIONS, CATEGORY_TRANSLATIONS } from '../constants';
 import { Language } from '../types';
+import { Search, PackageSearch } from 'lucide-react';
 
 const Catalog: React.FC = () => {
   const { lang, items, loading } = useAppContext();
@@ -72,7 +73,7 @@ const Catalog: React.FC = () => {
 
         <div className="flex flex-col gap-6">
           <div className="relative">
-            <i data-lucide="search" className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"></i>
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400" />
             <input
               type="text"
               placeholder={TRANSLATIONS.searchPlaceholder[lang]}
@@ -124,7 +125,7 @@ const Catalog: React.FC = () => {
       ) : (
         <div className="py-32 text-center flex flex-col items-center">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 text-gray-300">
-            <i data-lucide="package-search" className="w-12 h-12"></i>
+            <PackageSearch className="w-12 h-12" />
           </div>
           <h2 className="text-2xl font-black text-gray-900 mb-2">Brak wyników</h2>
           <p className="text-gray-500 font-medium">Spróbuj wpisać inną frazę lub zmienić kategorię.</p>

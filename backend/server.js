@@ -1,294 +1,65 @@
 import express from 'express';
-import { GoogleGenAI } from '@google/genai';
 import cors from 'cors';
 import fetch from 'node-fetch';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
 import 'dotenv/config';
-import { Readable } from 'stream';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Read package.json to get version
-const packageJsonPath = path.resolve(__dirname, '../package.json');
-let appVersion = 'unknown';
-try {
-  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-  appVersion = pkg.version;
-} catch (e) {
-  console.error("Could not read package.json version");
-}
+import { createZohoRouter } from './routes/zoho.js';
+import aiRouter from './routes/ai.js';
 
 const app = express();
 const PORT = process.env.PORT || 3300;
 
-console.log('-------------------------------------------');
-console.log(`🚀 RAJ OKAZJI BOOT SEQUENCE v${appVersion}`);
-console.log(`Port: ${PORT}`);
-console.log(`Node Version: ${process.version}`);
-console.log('-------------------------------------------');
-
 app.use(cors());
 app.use(express.json());
 
-// --- ZOHO OAUTH HELPERS ---
-let cachedAccessToken = null;
-let tokenExpiry = 0;
-
-async function getZohoAccessToken() {
-  const now = Date.now();
-  if (cachedAccessToken && now < tokenExpiry) return cachedAccessToken;
-
-  const { ZOHO_REFRESH_TOKEN, ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET } = process.env;
-  if (!ZOHO_REFRESH_TOKEN || !ZOHO_CLIENT_ID || !ZOHO_CLIENT_SECRET) {
-    throw new Error('ZOHO_CREDENTIALS_MISSING');
-  }
-
-  const params = new URLSearchParams();
-  params.append('refresh_token', ZOHO_REFRESH_TOKEN);
-  params.append('client_id', ZOHO_CLIENT_ID);
-  params.append('client_secret', ZOHO_CLIENT_SECRET);
-  params.append('grant_type', 'refresh_token');
-
-  const response = await fetch('https://accounts.zoho.eu/oauth/v2/token', { method: 'POST', body: params });
-  const data = await response.json();
-
-  if (!data.access_token) throw new Error('ZOHO_AUTH_FAILED');
-
-  cachedAccessToken = data.access_token;
-  tokenExpiry = now + (data.expires_in - 60) * 1000;
-  return cachedAccessToken;
+// --- Setup & Validation ---
+const REQUIRED_ENV = [
+  'ZOHO_CLIENT_ID', 'ZOHO_CLIENT_SECRET', 'ZOHO_REFRESH_TOKEN',
+  'ZOHO_ORG_ID', 'GEMINI_API_KEY'
+];
+const missing = REQUIRED_ENV.filter(key => !process.env[key]);
+if (missing.length > 0) {
+  console.warn(`[WARNING] Missing environment variables: ${missing.join(', ')}`);
+  console.warn(`[WARNING] Zoho features and Gemini AI may not work until configured.`);
 }
 
-// --- API ROUTES ---
-const apiRouter = express.Router();
+// --- Zoho Token Management ---
+let cachedToken = { value: null, expiry: 0 };
 
-// --- GEMINI PROXY ENDPOINT ---
-apiRouter.post('/gemini/advice', async (req, res) => {
-  const { query, lang } = req.body;
-  if (!query || !lang) {
-    return res.status(400).json({ error: 'Missing query or lang' });
-  }
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Gemini API key not configured on server' });
-  }
-  try {
-    const ai = new GoogleGenAI({ apiKey });
-    const systemInstruction = lang === 'pl'
-      ? "Jesteś asystentem zakupowym w sklepie 'Raj Okazji'. Sklep sprzedaje zwroty z aukcji i nadwyżki z UK w cenach -50%. Pomagaj klientom wybierać okazje i odpowiadaj na pytania o model biznesowy (wysoka jakość, niska cena, sprawdzone produkty)."
-      : "You are a shopping assistant for 'Raj Okazji'. We sell auction returns and UK liquidation stock at 50%+ discounts. Help customers find deals and explain our model (high quality, low price, quality-checked products).";
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: query,
-      config: {
-        systemInstruction,
-        temperature: 0.7,
-      },
-    });
-    res.json({ advice: response.text || (lang === 'pl' ? "Przepraszam, nie mogłem przetworzyć zapytania." : "Sorry, I couldn't process your request.") });
-  } catch (error) {
-    console.error("Gemini Proxy Error:", error);
-    res.status(500).json({ error: lang === 'pl' ? "Wystąpił błąd asystenta AI." : "AI Assistant error occurred." });
-  }
-});
+async function getZohoAccessToken() {
+  if (cachedToken.value && Date.now() < cachedToken.expiry) return cachedToken.value;
 
-apiRouter.get('/status', (req, res) => {
-  res.json({ status: 'online', port: PORT, version: appVersion, uptime: process.uptime() });
-});
+  const region = process.env.ZOHO_REGION || 'eu';
+  console.log(`Refreshing Zoho Access Token (${region})...`);
+  const params = new URLSearchParams({
+    refresh_token: process.env.ZOHO_REFRESH_TOKEN,
+    client_id: process.env.ZOHO_CLIENT_ID,
+    client_secret: process.env.ZOHO_CLIENT_SECRET,
+    grant_type: 'refresh_token',
+  });
 
-apiRouter.get('/version', (req, res) => {
-  res.json({ version: appVersion, timestamp: new Date().toISOString() });
-});
+  const response = await fetch(`https://accounts.zoho.${region}/oauth/v2/token`, { method: 'POST', body: params });
+  const data = await response.json();
 
-apiRouter.get('/health-check', async (req, res) => {
-  const check = {
-    env: {
-      ZOHO_CLIENT_ID: process.env.ZOHO_CLIENT_ID ? 'Set' : 'Missing',
-      ZOHO_CLIENT_SECRET: process.env.ZOHO_CLIENT_SECRET ? 'Set' : 'Missing',
-      ZOHO_REFRESH_TOKEN: process.env.ZOHO_REFRESH_TOKEN ? 'Set' : 'Missing',
-      ZOHO_ORG_ID: process.env.ZOHO_ORG_ID ? 'Set' : 'Missing',
-      PORT: process.env.PORT
-    },
-    connectivity: 'Pending',
-    error: null
+  if (!data.access_token) throw new Error("Failed to refresh Zoho token: " + JSON.stringify(data));
+
+  cachedToken = {
+    value: data.access_token,
+    expiry: Date.now() + (data.expires_in - 300) * 1000 // 5 min cushion
   };
+  return cachedToken.value;
+}
 
-  try {
-    const token = await getZohoAccessToken();
-    check.connectivity = token ? 'Success (Token Generated)' : 'Failed';
-  } catch (e) {
-    check.connectivity = 'Failed';
-    check.error = e.message;
-    // If it's an invalid client error, it reveals secret issues
-    if (e.message.includes('invalid_client')) check.hint = 'Client ID/Secret is wrong';
-  }
+// --- Routes ---
+app.use('/api/zoho', createZohoRouter(getZohoAccessToken));
+app.use('/api/gemini', aiRouter);
 
-  res.json(check);
+app.get('/api/status', (req, res) => {
+  res.json({ status: 'online', port: PORT, timestamp: new Date() });
 });
 
-apiRouter.get('/zoho/items', async (req, res) => {
-  try {
-    const orgId = process.env.ZOHO_ORG_ID;
-    const token = await getZohoAccessToken();
-    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`-------------------------------------------`);
+  console.log(`🚀 RAJ OKAZJI BACKEND v4.0`);
+  console.log(`Running on http://0.0.0.0:${PORT}`);
+  console.log(`-------------------------------------------`);
 });
-
-// DEBUG: Inspect custom fields structure
-apiRouter.get('/zoho/debug-fields', async (req, res) => {
-  try {
-    const orgId = process.env.ZOHO_ORG_ID;
-    const token = await getZohoAccessToken();
-
-    // First, get list to find a Listed item ID
-    const listResponse = await fetch(`https://www.zohoapis.eu/inventory/v1/items?organization_id=${orgId}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-    const listData = await listResponse.json();
-    const listedItem = listData.items?.find(i => i.cf_allegro_status === 'Listed');
-
-    if (!listedItem) {
-      return res.json({ error: 'No Listed product found' });
-    }
-
-    // Now fetch the FULL details of that single item
-    const itemResponse = await fetch(`https://www.zohoapis.eu/inventory/v1/items/${listedItem.item_id}?organization_id=${orgId}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-    const itemData = await itemResponse.json();
-    const fullItem = itemData.item;
-
-    res.json({
-      item_name: fullItem?.name,
-      sku: fullItem?.sku,
-      custom_fields_array: fullItem?.custom_fields || [],
-      has_cf_image_urls_property: fullItem?.hasOwnProperty('cf_image_urls'),
-      cf_image_urls_direct: fullItem?.cf_image_urls,
-      cf_image_1_direct: fullItem?.cf_image_1
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-apiRouter.get('/zoho/items/:id', async (req, res) => {
-  try {
-    const orgId = process.env.ZOHO_ORG_ID;
-    const token = await getZohoAccessToken();
-    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/items/${req.params.id}?organization_id=${orgId}`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-apiRouter.post('/zoho/salesorders', async (req, res) => {
-  try {
-    const orgId = process.env.ZOHO_ORG_ID;
-    const token = await getZohoAccessToken();
-    const response = await fetch(`https://www.zohoapis.eu/inventory/v1/salesorders?organization_id=${orgId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Zoho-oauthtoken ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(req.body)
-    });
-    const data = await response.json();
-    res.status(response.status).json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-apiRouter.get('/zoho/images/:itemId/:imageId', async (req, res) => {
-  try {
-    const { itemId, imageId } = req.params;
-    const orgId = process.env.ZOHO_ORG_ID;
-    const token = await getZohoAccessToken();
-
-    // Zoho Image URL format
-    const imageUrl = `https://www.zohoapis.eu/inventory/v1/items/${itemId}/images/${imageId}?organization_id=${orgId}`;
-
-    const response = await fetch(imageUrl, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}` }
-    });
-
-    if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-
-    // Forward headers (Content-Type is important)
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
-
-    // Stream the image data to the client
-    // node-fetch v3 returns a Web Stream, which needs conversion to Node stream
-    Readable.fromWeb(response.body).pipe(res);
-
-  } catch (error) {
-    console.error('Image Proxy Error:', error);
-    res.status(404).send('Image not found');
-  }
-});
-
-app.use('/api', apiRouter);
-
-// --- STATIC FILES & SPA FALLBACK ---
-const distPath = path.resolve(__dirname, '../dist');
-
-// Helper to disable caching for index.html
-const setNoCache = (res) => {
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-};
-
-// Serve static assets normally, but force no-cache on index.html if requested directly
-app.use(express.static(distPath, {
-  setHeaders: (res, path) => {
-    if (path.endsWith('index.html')) {
-      setNoCache(res);
-    }
-  }
-}));
-
-// Express 5 SPA Fallback
-app.get(/.*/, (req, res) => {
-  // If it's an API call that leaked through, 404 it
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({ error: 'Not found' });
-  }
-
-  const indexPath = path.join(distPath, 'index.html');
-  if (fs.existsSync(indexPath)) {
-    // Force no-cache on the fallback index.html as well
-    setNoCache(res);
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).send(`
-      <h1>Frontend Not Found</h1>
-      <p>The 'dist' directory is missing. Please run <code>npm run build</code> on the server.</p>
-    `);
-  }
-});
-
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[READY] Listening on http://0.0.0.0:${PORT}`);
-});
-
-server.on('error', (err) => {
-  console.error('[CRITICAL] Server failed to bind to port:', err.message);
-  process.exit(1);
-});
-

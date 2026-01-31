@@ -5,6 +5,7 @@ import { useAppContext } from '../App';
 import { ZohoItem, Language } from '../types';
 import { fetchItemById } from '../services/zohoService';
 import { TRANSLATIONS } from '../constants';
+import { ChevronRight, Star, Sparkles, ShoppingCart, Check, ShieldCheck } from 'lucide-react';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -45,9 +46,9 @@ const ProductDetail: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <nav className="flex items-center gap-2 text-sm font-medium text-gray-500">
         <Link to="/" className="hover:text-brand-600 transition-colors">Raj Okazji</Link>
-        <i data-lucide="chevron-right" className="w-4 h-4"></i>
+        <ChevronRight className="w-4 h-4" />
         <Link to="/catalog" className="hover:text-brand-600 transition-colors">{TRANSLATIONS.allProducts[lang]}</Link>
-        <i data-lucide="chevron-right" className="w-4 h-4"></i>
+        <ChevronRight className="w-4 h-4" />
         <span className="text-brand-900 truncate max-w-xs">{name}</span>
       </nav>
 
@@ -107,7 +108,7 @@ const ProductDetail: React.FC = () => {
 
           <div className="flex items-center gap-4 mb-8">
             <div className="flex items-center text-yellow-400">
-              {[1, 2, 3, 4, 5].map(i => <i key={i} data-lucide="star" className="w-4 h-4 fill-current"></i>)}
+              {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
             </div>
             <span className="text-sm text-gray-400 font-medium">{TRANSLATIONS.noReviews[lang]}</span>
           </div>
@@ -125,7 +126,7 @@ const ProductDetail: React.FC = () => {
             </div>
             {item.cf_retail_price && (
               <p className="text-green-600 font-bold flex items-center gap-2">
-                <i data-lucide="sparkles" className="w-4 h-4"></i>
+                <Sparkles className="w-4 h-4" />
                 {TRANSLATIONS.youSave[lang]} {(item.cf_retail_price - item.rate).toFixed(2)} zł
               </p>
             )}
@@ -152,7 +153,7 @@ const ProductDetail: React.FC = () => {
               disabled={item.available_stock <= 0}
               className="w-full bg-brand-600 text-white py-6 rounded-[1.5rem] font-black text-xl hover:bg-brand-700 shadow-xl shadow-brand-100 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
             >
-              <i data-lucide="shopping-cart" className="w-6 h-6"></i>
+              <ShoppingCart className="w-6 h-6" />
               {TRANSLATIONS.addToCart[lang]}
             </button>
             <Link
@@ -172,7 +173,7 @@ const ProductDetail: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-8 mt-12">
             <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
               <h3 className="font-bold text-brand-900 mb-4 flex items-center gap-2">
-                <i data-lucide="check" className="w-5 h-5 text-green-500"></i>
+                <Check className="w-5 h-5 text-green-500" />
                 {TRANSLATIONS.techSpecs[lang]}
               </h3>
               <ul className="space-y-3 text-sm font-medium">
@@ -192,7 +193,7 @@ const ProductDetail: React.FC = () => {
             </div>
             <div className="bg-brand-900 text-white p-6 rounded-2xl">
               <h3 className="font-black mb-4 flex items-center gap-2">
-                <i data-lucide="shield-check" className="w-5 h-5 text-brand-400"></i>
+                <ShieldCheck className="w-5 h-5 text-brand-400" />
                 {TRANSLATIONS.ourGuaranteeTitle[lang]}
               </h3>
               <p className="text-sm opacity-80 leading-relaxed">

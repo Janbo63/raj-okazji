@@ -8,26 +8,7 @@ import ProductDetail from './pages/ProductDetail';
 import Checkout from './pages/Checkout';
 import { fetchItems } from './services/zohoService';
 
-// Define global interface for Lucide icon library loaded via CDN/Script
-declare global {
-  interface Window {
-    lucide?: {
-      createIcons: () => void;
-    };
-  }
-}
-
-// Component to refresh icons on navigation
-const IconRefresh: React.FC = () => {
-  const location = useLocation();
-  useEffect(() => {
-    // Check if lucide is available on the window object
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-  }, [location]);
-  return null;
-};
+import { Facebook, Instagram } from 'lucide-react';
 
 interface AppContextType {
   lang: Language;
@@ -117,7 +98,6 @@ const App: React.FC = () => {
   return (
     <AppContext.Provider value={value}>
       <Router>
-        <IconRefresh />
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
@@ -160,10 +140,10 @@ const App: React.FC = () => {
                   <h4 className="font-black text-xs uppercase tracking-[0.2em] text-gray-400 mb-6">Social Media</h4>
                   <div className="flex gap-4">
                     <button className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:bg-brand-100 hover:text-brand-600 transition-all">
-                      <i data-lucide="facebook" className="w-5 h-5"></i>
+                      <Facebook className="w-5 h-5" />
                     </button>
                     <button className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-500 hover:bg-brand-100 hover:text-brand-600 transition-all">
-                      <i data-lucide="instagram" className="w-5 h-5"></i>
+                      <Instagram className="w-5 h-5" />
                     </button>
                   </div>
                 </div>

@@ -25,31 +25,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     
-    <!-- External Libs -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Config -->
-    <script>
-      window.process = { env: { NODE_ENV: 'production' } };
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              script: ['Dancing Script', 'cursive'],
-            },
-            colors: {
-              brand: {
-                50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
-                400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
-                800: '#5b21b6', 900: '#4c1d95',
-              }
-            }
-          }
-        }
-      }
-    </script>
     <style>
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -58,12 +33,5 @@
   <body class="bg-gray-50 text-gray-900 font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      // Initialize Lucide Icons if loaded
-      document.addEventListener('DOMContentLoaded', () => {
-        if (window.lucide) window.lucide.createIcons();
-        console.log("Raj Okazji HTML v3.21 Loaded");
-      });
-    </script>
   </body>
 </html>
