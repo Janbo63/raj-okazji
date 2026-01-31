@@ -2,8 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import 'dotenv/config';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createZohoRouter } from './routes/zoho.js';
 import aiRouter from './routes/ai.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3300;
@@ -55,6 +60,15 @@ app.use('/api/gemini', aiRouter);
 
 app.get('/api/status', (req, res) => {
   res.json({ status: 'online', port: PORT, timestamp: new Date() });
+});
+
+// --- Static Files ---
+// Serve static files from the 'dist' directory (one level up from 'backend')
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Catch-all route to serve index.html for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
