@@ -2,6 +2,27 @@ import React, { useState, useEffect, useMemo, createContext, useContext } from '
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Language, CartItem, ZohoItem, User } from './types';
 import Navbar from './components/Navbar';
+import { AlertTriangle } from 'lucide-react';
+
+const BetaBanner: React.FC = () => {
+  const { lang } = useAppContext();
+  const title = lang === Language.PL ? 'WERSJA TESTOWA 🛠️' : 'DEVELOPMENT MODE 🛠️';
+  const text = lang === Language.PL
+    ? 'Strona jest w trakcie budowy i testów. Zamówienia nie są obecnie realizowane.'
+    : 'The site is under construction and testing. Orders are not currently accepted.';
+
+  return (
+    <div className="bg-amber-500 text-white py-2 px-4 shadow-lg flex items-center justify-center gap-3 z-[100] relative">
+      <AlertTriangle className="w-5 h-5 animate-pulse shrink-0" />
+      <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-4 overflow-hidden">
+        <span className="font-black text-xs uppercase tracking-widest whitespace-nowrap">{title}</span>
+        <span className="text-xs font-bold opacity-90 truncate">{text}</span>
+      </div>
+      <AlertTriangle className="w-5 h-5 animate-pulse shrink-0 hidden sm:block" />
+    </div>
+  );
+};
+
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import ProductDetail from './pages/ProductDetail';
@@ -99,6 +120,7 @@ const App: React.FC = () => {
     <AppContext.Provider value={value}>
       <Router>
         <div className="min-h-screen flex flex-col bg-gray-50">
+          <BetaBanner />
           <Navbar />
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
             <Routes>

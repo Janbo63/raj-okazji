@@ -256,6 +256,14 @@ export const TRANSLATIONS: TranslationDict = {
   emptyCart: {
     pl: 'Twój koszyk jest pusty.',
     en: 'Your cart is empty.'
+  },
+  betaWarningTitle: {
+    pl: 'WERSJA TESTOWA',
+    en: 'TEST VERSION'
+  },
+  betaWarningText: {
+    pl: 'Sklep jest w trakcie budowy. Zamówienia nie są obecnie realizowane.',
+    en: 'The store is under construction. Orders are not currently accepted.'
   }
 };
 
