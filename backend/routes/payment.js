@@ -18,10 +18,10 @@ export function createPaymentRouter(getAccessToken) {
 
     router.post('/create-checkout-session', async (req, res) => {
         if (!stripe) return res.status(503).json({ error: 'Payment service is currently unavailable.' });
-        const { items, success_url, cancel_url, customer_email, metadata } = req.body;
+        const { items, success_url, cancel_url, customer_email, metadata, shippingMethod = 'locker' } = req.body;
 
         try {
-            const shippingCost = calculateShippingCost(items);
+            const shippingCost = calculateShippingCost(items, shippingMethod);
 
             const line_items = [
                 ...items.map((item) => ({

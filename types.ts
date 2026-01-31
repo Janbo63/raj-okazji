@@ -19,6 +19,7 @@ export interface ZohoItem {
   cf_category_pl: string;
   cf_category_en: string;
   cf_retail_price?: number; // Retail price for discount calculation
+  cf_shipping_class?: 'S' | 'M' | 'L';
 }
 
 export interface CartItem extends ZohoItem {

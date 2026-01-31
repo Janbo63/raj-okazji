@@ -4,7 +4,7 @@ import { useAppContext } from '../App';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { createSalesOrder } from '../services/zohoService';
-import { CheckCircle2, ShoppingBasket, User, Truck, Package, MapPin, CreditCard, Lock, Zap, Map as MapIcon } from 'lucide-react';
+import { CheckCircle2, ShoppingBasket, User, Truck, Package, MapPin, CreditCard, Lock, Zap, Map as MapIcon, X } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -40,23 +40,52 @@ const Checkout: React.FC = () => {
     city: '',
     zip: '',
     paczkomatId: '',
-    paymentMethod: 'cash_on_delivery'
+    paymentMethod: 'cash_on_delivery',
+    shippingMethod: 'locker' as 'locker' | 'courier'
   });
 
   const [showMap, setShowMap] = useState(false);
 
   const handleLockerSelect = (point: any) => {
-    setFormData({ ...formData, paczkomatId: point.name, address: point.address_details?.street + ' ' + point.address_details?.building_number, city: point.address_details?.city });
+    setFormData(prev => ({
+      ...prev,
+      paczkomatId: point.name,
+      address: point.address_details?.street + ' ' + point.address_details?.building_number,
+      city: point.address_details?.city,
+      zip: point.address_details?.post_code
+    }));
     setShowMap(false);
   };
 
   const subtotal = cart.reduce((acc, item) => acc + item.rate * item.quantity, 0);
-  const shipping = formData.paymentMethod === 'cash_on_delivery' ? 19.99 : 14.99;
+
+  const getShippingPrice = () => {
+    let highestTier = 'S';
+    cart.forEach(item => {
+      const tier = item.cf_shipping_class || 'M';
+      if (tier === 'L') highestTier = 'L';
+      else if (tier === 'M' && highestTier !== 'L') highestTier = 'M';
+    });
+
+    const prices = {
+      locker: { S: 16.99, M: 18.99, L: 20.99 },
+      courier: { S: 19.99, M: 22.99, L: 26.99 }
+    };
+
+    return prices[formData.shippingMethod][highestTier as 'S' | 'M' | 'L'];
+  };
+
+  const shipping = getShippingPrice();
   const total = subtotal + shipping;
 
   const handleCreateOrder = async () => {
     if (!formData.email || !formData.firstName || !formData.phone) {
       alert(lang === 'pl' ? 'Wypełnij wymagane dane' : 'Please fill required data');
+      return;
+    }
+
+    if (formData.shippingMethod === 'locker' && !formData.paczkomatId) {
+      alert(lang === 'pl' ? 'Wybierz paczkomat' : 'Please select a parcel locker');
       return;
     }
 
@@ -70,7 +99,8 @@ const Checkout: React.FC = () => {
             name: lang === Language.PL ? item.cf_item_name_pl : item.cf_item_name_en,
             price: item.rate,
             quantity: item.quantity,
-            image: `https://picsum.photos/seed/${item.item_id}/600/600`
+            image: `https://picsum.photos/seed/${item.item_id}/600/600`,
+            cf_shipping_class: item.cf_shipping_class
           })),
           customer_email: formData.email,
           success_url: `${window.location.origin}/checkout?success=true`,
@@ -78,7 +108,8 @@ const Checkout: React.FC = () => {
           metadata: {
             ...formData,
             cart: JSON.stringify(cart.map(i => ({ id: i.item_id, q: i.quantity })))
-          }
+          },
+          shippingMethod: formData.shippingMethod
         })
       });
 
@@ -209,29 +240,123 @@ const Checkout: React.FC = () => {
               {TRANSLATIONS.deliveryMethod[lang]}
             </h2>
 
-            <div className="grid gap-4 mb-10">
-              <div className="bg-brand-50 border-2 border-brand-600 p-5 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Package className="w-8 h-8 text-brand-600" />
-                  <div>
-                    <h4 className="font-black text-brand-950">InPost Paczkomat 24/7</h4>
-                    <p className="text-xs text-brand-600 font-bold uppercase tracking-wider">{TRANSLATIONS.selectPointOnMap[lang]}</p>
-                  </div>
-                </div>
-                <span className="text-lg font-black text-brand-700">14.99 zł</span>
-              </div>
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <button
+                onClick={() => setFormData({ ...formData, shippingMethod: 'locker' })}
+                className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${formData.shippingMethod === 'locker' ? 'border-brand-600 bg-brand-50 shadow-md shadow-brand-50' : 'border-gray-100 hover:border-gray-200'}`}
+              >
+                <Package className={`w-8 h-8 ${formData.shippingMethod === 'locker' ? 'text-brand-600' : 'text-gray-400'}`} />
+                <span className={`font-black text-sm ${formData.shippingMethod === 'locker' ? 'text-brand-900' : 'text-gray-400'}`}>Paczkomat®</span>
+              </button>
+              <button
+                onClick={() => setFormData({ ...formData, shippingMethod: 'courier' })}
+                className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${formData.shippingMethod === 'courier' ? 'border-brand-600 bg-brand-50 shadow-md shadow-brand-50' : 'border-gray-100 hover:border-gray-200'}`}
+              >
+                <Truck className={`w-8 h-8 ${formData.shippingMethod === 'courier' ? 'text-brand-600' : 'text-gray-400'}`} />
+                <span className={`font-black text-sm ${formData.shippingMethod === 'courier' ? 'text-brand-900' : 'text-gray-400'}`}>Kurier (DHL)</span>
+              </button>
+            </div>
 
-              <div className="border-2 border-dashed border-gray-200 p-8 rounded-2xl cursor-pointer hover:border-brand-300 transition-all text-center group">
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors">
-                    <MapPin className="w-6 h-6" />
+            <div className="mb-10">
+              {formData.shippingMethod === 'locker' ? (
+                <div className="space-y-4">
+                  <div className="p-6 bg-brand-50 rounded-2xl border border-brand-100">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                        <MapPin className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-gray-900">{lang === 'pl' ? 'Wybierz Paczkomat' : 'Choose Parcel Locker'}</h3>
+                        <p className="text-sm text-brand-700 font-medium">InPost Paczkomat® 24/7</p>
+                      </div>
+                    </div>
+
+                    {formData.paczkomatId ? (
+                      <div className="bg-white p-4 rounded-xl border border-brand-200 mb-4">
+                        <p className="font-black text-brand-600 mb-1">{formData.paczkomatId}</p>
+                        <p className="text-sm text-gray-500">{formData.address}, {formData.city}</p>
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowMap(true)}
+                      className="w-full bg-white text-brand-600 border-2 border-brand-600 py-3 rounded-xl font-black text-sm hover:bg-brand-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <MapIcon className="w-4 h-4" />
+                      {formData.paczkomatId ? (lang === 'pl' ? 'Zmień Paczkomat' : 'Change Locker') : (lang === 'pl' ? 'Otwórz mapę Paczkomatów' : 'Open Locker Map')}
+                    </button>
                   </div>
-                  <div className="text-sm font-bold text-gray-400 group-hover:text-brand-600">
-                    {formData.paczkomatId ? `Wybrany punkt: ${formData.paczkomatId}` : TRANSLATIONS.paczkomatLabel[lang]}
-                  </div>
-                  <span className="font-black text-brand-600 underline text-sm">{TRANSLATIONS.openGeowidget[lang]}</span>
+
+                  {showMap && (
+                    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+                      <div className="bg-white w-full max-w-4xl h-[80vh] rounded-[2rem] overflow-hidden relative shadow-2xl">
+                        <button
+                          onClick={() => setShowMap(false)}
+                          className="absolute top-4 right-4 z-[110] bg-white w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 text-gray-400 hover:text-gray-900 transition-all"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                        <div className="w-full h-full p-2">
+                          {/* InPost Geowidget Container */}
+                          <div
+                            id="inpost-geowidget"
+                            className="w-full h-full rounded-2xl overflow-hidden"
+                            ref={(el) => {
+                              if (el && window.InPost) {
+                                setTimeout(() => {
+                                  new window.InPost.Geowidget({
+                                    container: 'inpost-geowidget',
+                                    onPoint: (point: any) => handleLockerSelect(point),
+                                    config: 'paczkomat'
+                                  });
+                                }, 100);
+                              }
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-6 bg-gray-50 p-6 rounded-2xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">{TRANSLATIONS.deliveryAddress[lang]}</label>
+                    <div className="relative">
+                      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.address}
+                        onChange={e => setFormData({ ...formData, address: e.target.value })}
+                        className="w-full bg-white border border-gray-200 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder={lang === 'pl' ? 'Ulica i numer' : 'Street and number'}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">{lang === 'pl' ? 'Kod pocztowy' : 'Zip code'}</label>
+                      <input
+                        type="text"
+                        value={formData.zip}
+                        onChange={e => setFormData({ ...formData, zip: e.target.value })}
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="00-000"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">{lang === 'pl' ? 'Miasto' : 'City'}</label>
+                      <input
+                        type="text"
+                        value={formData.city}
+                        onChange={e => setFormData({ ...formData, city: e.target.value })}
+                        className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-brand-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
