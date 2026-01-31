@@ -75,8 +75,9 @@ console.log('Static Files Path:', staticPath);
 // Serve static files from the 'dist' directory (one level up from 'backend')
 app.use(express.static(staticPath));
 
-// Catch-all route to serve index.html for client-side routing
-app.get('(.*)', (req, res) => {
+// Catch-all fallback to serve index.html for client-side routing
+// This is placed after all API routes
+app.use((req, res) => {
   res.sendFile(path.join(staticPath, 'index.html'));
 });
 
